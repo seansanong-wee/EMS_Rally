@@ -84,14 +84,26 @@
     <main class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         
         <!-- ส่วนหัวข้อและปุ่ม Export -->
-        <div class="flex flex-col md:flex-row justify-between items-center mb-6 no-print">
-            <h2 class="text-xl font-bold text-gray-700 flex items-center mb-4 md:mb-0">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 no-print">
+            <h2 class="text-xl font-bold text-gray-700 flex items-center shrink-0">
                 <svg class="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                 สรุปผลคะแนนแบบ Real-time
             </h2>
             
-            <!-- ปุ่มจัดการ PDF / Print -->
-            <div class="flex gap-3">
+            <!-- ช่องค้นหา -->
+            <div class="relative w-full md:w-64">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <input type="text" id="searchInput" oninput="filterAndDisplayData()" class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5 shadow-sm transition-all" placeholder="ค้นหาชื่อทีม (โรงพยาบาล)...">
+            </div>
+
+            <!-- ปุ่มจัดการ PDF / Print และปุ่มเพิ่มทีม -->
+            <div class="flex flex-wrap justify-center gap-3 shrink-0">
+                <button onclick="openTeamModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-md transition-colors flex items-center text-sm font-semibold">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    เพิ่มทีม
+                </button>
                 <button onclick="window.print()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg shadow-md transition-colors flex items-center text-sm font-semibold">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                     พิมพ์ (Print)
@@ -162,6 +174,39 @@
         </div>
     </main>
 
+    <!-- Modal สำหรับ เพิ่ม/แก้ไข ทีม -->
+    <div id="teamModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 overflow-y-auto h-full w-full z-50 flex items-center justify-center no-print">
+        <div class="relative mx-auto p-6 border w-96 shadow-2xl rounded-xl bg-white transition-all transform scale-100">
+            <h3 id="modalTitle" class="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                <svg class="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m3-4h1m-1 4h1m-5 8h8"></path></svg>
+                เพิ่มชื่อทีมใหม่
+            </h3>
+            <div class="mb-5">
+                <label for="teamNameInput" class="block text-sm font-medium text-gray-700 mb-2">ชื่อทีม / โรงพยาบาล</label>
+                <input type="text" id="teamNameInput" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="ระบุชื่อทีม...">
+                <p id="modalError" class="text-red-500 text-xs mt-2 hidden">กรุณากรอกชื่อทีม!</p>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeTeamModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg text-sm font-semibold transition-colors">ยกเลิก</button>
+                <button onclick="saveTeam()" id="saveTeamBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors flex items-center">
+                    บันทึกข้อมูล
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal โชว์ข้อความแจ้งเตือน -->
+    <div id="alertModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 overflow-y-auto h-full w-full z-[60] flex items-center justify-center no-print">
+        <div class="relative mx-auto p-6 border w-80 shadow-2xl rounded-xl bg-white text-center">
+            <div id="alertIcon" class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            </div>
+            <h3 id="alertTitle" class="text-lg font-bold text-gray-900 mb-2">สำเร็จ</h3>
+            <p id="alertMessage" class="text-sm text-gray-500 mb-5">ดำเนินการเสร็จสิ้น</p>
+            <button onclick="closeAlertModal()" class="w-full px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-sm font-semibold transition-colors">ตกลง</button>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="bg-gray-800 text-white py-6 mt-6 border-t-4 border-red-500 no-print">
         <div class="max-w-7xl mx-auto px-4 text-center">
@@ -176,6 +221,103 @@
     <script>
         const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwmTMpSUBxFlO1E8EMHzzYQHO49sLRP5rqbve6XoB1MZg9wmsqyoqUm6lL-_x8NyKqK/exec';
         let scoreChart = null;
+        let allTeamData = []; 
+        let isModalOpen = false; // ป้องกันการรีเฟรชออโต้ตอนเปิด Modal
+
+        // สถานะการแก้ไขทีม
+        let isEditingMode = false;
+        let editingOldName = "";
+
+        // ฟังก์ชันจัดการ Modal สรุปข้อความ
+        function showAlert(title, message, isSuccess = true) {
+            document.getElementById('alertTitle').innerText = title;
+            document.getElementById('alertMessage').innerText = message;
+            const iconWrap = document.getElementById('alertIcon');
+            if (isSuccess) {
+                iconWrap.className = 'mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4';
+                iconWrap.innerHTML = `<svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+            } else {
+                iconWrap.className = 'mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4';
+                iconWrap.innerHTML = `<svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`;
+            }
+            document.getElementById('alertModal').classList.remove('hidden');
+        }
+        function closeAlertModal() {
+            document.getElementById('alertModal').classList.add('hidden');
+        }
+
+        // ฟังก์ชันเปิด-ปิด Modal ทีม
+        function openTeamModal(teamNameToEdit = null) {
+            isModalOpen = true;
+            document.getElementById('modalError').classList.add('hidden');
+            const input = document.getElementById('teamNameInput');
+            
+            if (teamNameToEdit) {
+                isEditingMode = true;
+                editingOldName = teamNameToEdit;
+                document.getElementById('modalTitle').innerHTML = `<svg class="w-6 h-6 mr-2 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg> แก้ไขชื่อทีม`;
+                input.value = teamNameToEdit;
+            } else {
+                isEditingMode = false;
+                editingOldName = "";
+                document.getElementById('modalTitle').innerHTML = `<svg class="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m3-4h1m-1 4h1m-5 8h8"></path></svg> เพิ่มทีมใหม่`;
+                input.value = "";
+            }
+            document.getElementById('teamModal').classList.remove('hidden');
+            input.focus();
+        }
+
+        function closeTeamModal() {
+            isModalOpen = false;
+            document.getElementById('teamModal').classList.add('hidden');
+        }
+
+        // ฟังก์ชันส่งคำสั่งไป Google Sheet (POST)
+        async function saveTeam() {
+            const input = document.getElementById('teamNameInput');
+            const newName = input.value.trim();
+            const errorMsg = document.getElementById('modalError');
+            
+            if (newName === "") {
+                errorMsg.classList.remove('hidden');
+                return;
+            }
+            errorMsg.classList.add('hidden');
+
+            const btn = document.getElementById('saveTeamBtn');
+            const originalBtnText = btn.innerHTML;
+            btn.innerHTML = `<svg class="animate-spin h-4 w-4 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> กำลังบันทึก...`;
+            btn.disabled = true;
+
+            const payload = isEditingMode 
+                ? { action: "editTeam", oldName: editingOldName, newName: newName }
+                : { action: "addTeam", teamName: newName };
+
+            try {
+                // ส่ง POST ไปยัง Google Apps Script (ใช้ text/plain เพื่อเลี่ยง CORS Error)
+                const response = await fetch(GAS_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === "success") {
+                    closeTeamModal();
+                    showAlert("บันทึกสำเร็จ", isEditingMode ? "แก้ไขชื่อทีมเรียบร้อยแล้ว" : "เพิ่มทีมใหม่ลงในชีตเรียบร้อยแล้ว", true);
+                    fetchScoreData(); // โหลดข้อมูลตารางใหม่ทันที
+                } else {
+                    showAlert("เกิดข้อผิดพลาด", result.message, false);
+                }
+            } catch (err) {
+                showAlert("เกิดข้อผิดพลาด", "ไม่สามารถติดต่อ Google Sheet ได้ โปรดเช็คการตั้งค่า Deploy", false);
+                console.error(err);
+            } finally {
+                btn.innerHTML = originalBtnText;
+                btn.disabled = false;
+            }
+        }
 
         // อัปเดตเวลาพิมพ์ใน PDF
         function updatePrintTime() {
@@ -217,6 +359,8 @@
 
         // ดึงข้อมูลหลักจาก API
         async function fetchScoreData() {
+            if (isModalOpen) return; // ถ้าเปิดหน้าต่างแก้ไขอยู่ ให้หยุดรีเฟรชชั่วคราวเพื่อไม่ให้ขัดจังหวะ
+
             const indicator = document.getElementById('live-indicator');
             indicator.classList.remove('bg-red-400', 'animate-ping');
             indicator.classList.add('bg-yellow-400');
@@ -248,10 +392,12 @@
                     return { ...team, total: totalScore };
                 });
 
+                // จัดเรียงคะแนน
                 processedData.sort((a, b) => b.total - a.total);
 
-                updateTable(processedData);
-                updateChart(processedData);
+                // เก็บข้อมูลทั้งหมด และเรียกฟังก์ชันกรองข้อมูล
+                allTeamData = processedData;
+                filterAndDisplayData();
                 updatePrintTime(); 
 
                 setTimeout(() => {
@@ -277,10 +423,36 @@
             }
         }
 
+        // ฟังก์ชันค้นหาและกรองข้อมูล (เพิ่มใหม่)
+        function filterAndDisplayData() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+            
+            // กรองข้อมูลตามชื่อทีม
+            const filteredData = allTeamData.filter(team => {
+                return team.name.toLowerCase().includes(searchTerm);
+            });
+
+            // อัปเดตตารางและกราฟด้วยข้อมูลที่ถูกกรอง
+            updateTable(filteredData);
+            updateChart(filteredData);
+        }
+
         // อัปเดตตาราง
         function updateTable(data) {
             const tbody = document.getElementById('leaderboard-body');
             tbody.innerHTML = '';
+
+            // ถ้าค้นหาแล้วไม่เจอข้อมูล
+            if (data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="13" class="px-6 py-8 text-center text-gray-500 bg-gray-50">
+                            ไม่พบชื่อทีมที่ค้นหา
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
 
             data.forEach((team, index) => {
                 const rank = index + 1;
@@ -296,9 +468,17 @@
 
                 const tr = document.createElement('tr');
                 tr.className = rowClass;
+                // เพิ่มปุ่มแก้ไข (Edit) ไว้ข้างๆ ชื่อทีม
                 tr.innerHTML = `
                     <td class="px-4 py-2 text-center sticky-col-1 ${rank <= 3 ? 'bg-transparent' : 'bg-white'}">${rankHtml}</td>
-                    <td class="px-4 py-2 font-semibold text-gray-800 sticky-col-2 ${rank <= 3 ? 'bg-transparent' : 'bg-white'} truncate max-w-[150px] print:max-w-none" title="${team.name}">${team.name}</td>
+                    <td class="px-4 py-2 font-semibold text-gray-800 sticky-col-2 ${rank <= 3 ? 'bg-transparent' : 'bg-white'} truncate max-w-[150px] print:max-w-none group" title="${team.name}">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="truncate">${team.name}</span>
+                            <button onclick="openTeamModal('${team.name}')" class="text-gray-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 no-print" title="แก้ไขชื่อทีม">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                            </button>
+                        </div>
+                    </td>
                     <td class="px-4 py-2 text-center text-base shadow-sm print:shadow-none print:bg-transparent print:text-black ${totalColorClass}">${team.total.toFixed(1)}</td>
                     <td class="px-3 py-2 text-center text-gray-600 print:text-black border-l border-gray-100">${Number(team.c1).toFixed(1)}</td>
                     <td class="px-3 py-2 text-center text-gray-600 print:text-black">${Number(team.c2).toFixed(1)}</td>
