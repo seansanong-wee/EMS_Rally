@@ -112,7 +112,7 @@
                 <p class="text-gray-600 mt-1" id="print-time"></p>
             </div>
 
-            <!-- กราฟ (ในมือถือซ่อนกราฟตอนแคป PDF เพื่อประหยัดพื้นที่กระดาษ) -->
+            <!-- กราฟ -->
             <div class="relative h-64 md:h-80 w-full mb-8">
                 <canvas id="scoreChart"></canvas>
             </div>
@@ -125,16 +125,16 @@
                             <th class="px-4 py-3 text-center sticky-col-1">อันดับ</th>
                             <th class="px-4 py-3 sticky-col-2">ชื่อทีม (รพ.)</th>
                             <th class="px-4 py-3 text-center bg-red-600 font-bold text-base print:bg-gray-300 print:text-black">รวม (900)</th>
-                            <th class="px-3 py-3 text-center">ฐาน 1 MCI<br><span class="font-normal">(100)</span></th>
-                            <th class="px-3 py-3 text-center">ฐาน 2 Peds<br><span class="font-normal">(100)</span></th>
-                            <th class="px-3 py-3 text-center">ฐาน 3 Labor<br><span class="font-normal">(100)</span></th>
-                            <th class="px-3 py-3 text-center">ฐาน 4 TBI<br><span class="font-normal">(100)</span></th>
-                            <th class="px-3 py-3 text-center">ฐาน 5 Trauma<br><span class="font-normal">(100)</span></th>
-                            <th class="px-3 py-3 text-center">ฐาน 6 Arrest<br><span class="font-normal">(100)</span></th>
-                            <th class="px-3 py-3 text-center">ฐาน 7 Stroke<br><span class="font-normal">(100)</span></th>
-                            <th class="px-3 py-3 text-center">ฐาน 8 STEMI<br><span class="font-normal">(100)</span></th>
-                            <th class="px-3 py-3 text-center">สันทนาการ1<br><span class="font-normal">(50)</span></th>
-                            <th class="px-3 py-3 text-center">สันทนาการ2<br><span class="font-normal">(50)</span></th>
+                            <th class="px-3 py-3 text-center" title="1.ประเมินผู้ป่วย(20) 2.วินิจฉัยตัดสินใจ(15) 3.ทักษะปฏิบัติการ(15) 4.ทำงานเป็นทีม(10) 5.สื่อสาร 1669(10) 6.บริหารเวลา(10) 7.ความปลอดภัย(5) 8.มารยาท/จริยธรรม(5) 9.ประเมินสมรรถนะ(10)">ฐาน 1 MCI<br><span class="font-normal">(100)</span></th>
+                            <th class="px-3 py-3 text-center" title="1.ประเมินผู้ป่วย(20) 2.วินิจฉัยตัดสินใจ(15) 3.ทักษะปฏิบัติการ(15) 4.ทำงานเป็นทีม(10) 5.สื่อสาร 1669(10) 6.บริหารเวลา(10) 7.ความปลอดภัย(5) 8.มารยาท/จริยธรรม(5) 9.ประเมินสมรรถนะ(10)">ฐาน 2 Peds<br><span class="font-normal">(100)</span></th>
+                            <th class="px-3 py-3 text-center" title="1.ประเมินผู้ป่วย(20) 2.วินิจฉัยตัดสินใจ(15) 3.ทักษะปฏิบัติการ(15) 4.ทำงานเป็นทีม(10) 5.สื่อสาร 1669(10) 6.บริหารเวลา(10) 7.ความปลอดภัย(5) 8.มารยาท/จริยธรรม(5) 9.ประเมินสมรรถนะ(10)">ฐาน 3 Labor<br><span class="font-normal">(100)</span></th>
+                            <th class="px-3 py-3 text-center" title="1.ประเมินผู้ป่วย(20) 2.วินิจฉัยตัดสินใจ(15) 3.ทักษะปฏิบัติการ(15) 4.ทำงานเป็นทีม(10) 5.สื่อสาร 1669(10) 6.บริหารเวลา(10) 7.ความปลอดภัย(5) 8.มารยาท/จริยธรรม(5) 9.ประเมินสมรรถนะ(10)">ฐาน 4 TBI<br><span class="font-normal">(100)</span></th>
+                            <th class="px-3 py-3 text-center" title="1.ประเมินผู้ป่วย(20) 2.วินิจฉัยตัดสินใจ(15) 3.ทักษะปฏิบัติการ(15) 4.ทำงานเป็นทีม(10) 5.สื่อสาร 1669(10) 6.บริหารเวลา(10) 7.ความปลอดภัย(5) 8.มารยาท/จริยธรรม(5) 9.ประเมินสมรรถนะ(10)">ฐาน 5 Trauma<br><span class="font-normal">(100)</span></th>
+                            <th class="px-3 py-3 text-center" title="1.ประเมินผู้ป่วย(20) 2.วินิจฉัยตัดสินใจ(15) 3.ทักษะปฏิบัติการ(15) 4.ทำงานเป็นทีม(10) 5.สื่อสาร 1669(10) 6.บริหารเวลา(10) 7.ความปลอดภัย(5) 8.มารยาท/จริยธรรม(5) 9.ประเมินสมรรถนะ(10)">ฐาน 6 Arrest<br><span class="font-normal">(100)</span></th>
+                            <th class="px-3 py-3 text-center" title="1.ประเมินผู้ป่วย(20) 2.วินิจฉัยตัดสินใจ(15) 3.ทักษะปฏิบัติการ(15) 4.ทำงานเป็นทีม(10) 5.สื่อสาร 1669(10) 6.บริหารเวลา(10) 7.ความปลอดภัย(5) 8.มารยาท/จริยธรรม(5) 9.ประเมินสมรรถนะ(10)">ฐาน 7 Stroke<br><span class="font-normal">(100)</span></th>
+                            <th class="px-3 py-3 text-center" title="1.ประเมินผู้ป่วย(20) 2.วินิจฉัยตัดสินใจ(15) 3.ทักษะปฏิบัติการ(15) 4.ทำงานเป็นทีม(10) 5.สื่อสาร 1669(10) 6.บริหารเวลา(10) 7.ความปลอดภัย(5) 8.มารยาท/จริยธรรม(5) 9.ประเมินสมรรถนะ(10)">ฐาน 8 STEMI<br><span class="font-normal">(100)</span></th>
+                            <th class="px-3 py-3 text-center text-purple-200">ฐาน 9 สันทนาการ 1<br><span class="font-normal text-white">(50)</span></th>
+                            <th class="px-3 py-3 text-center text-purple-200">ฐาน 10 สันทนาการ 2<br><span class="font-normal text-white">(50)</span></th>
                         </tr>
                     </thead>
                     <tbody id="leaderboard-body" class="divide-y divide-gray-200">
@@ -192,22 +192,19 @@
             btn.innerHTML = `<svg class="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>กำลังสร้าง PDF...`;
             
             updatePrintTime();
-            document.body.classList.add('pdf-exporting'); // ปิด Scroll X เพื่อให้เห็นตารางเต็มๆ
+            document.body.classList.add('pdf-exporting');
 
             const element = document.getElementById('printable-area');
             
-            // ตั้งค่าหน้ากระดาษเป็นแนวนอน (Landscape) เพื่อให้พอดีกับตารางที่ยาว
             const opt = {
-                margin:       [0.5, 0.5, 0.5, 0.5], // นิ้ว
+                margin:       [0.5, 0.5, 0.5, 0.5],
                 filename:     `ผลคะแนน_EMS_Rally_${new Date().getTime()}.pdf`,
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true, windowWidth: 1200 }, // ให้ชัดขึ้น
+                html2canvas:  { scale: 2, useCORS: true, windowWidth: 1200 },
                 jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
             };
 
-            // เรียกใช้ html2pdf
             html2pdf().set(opt).from(element).save().then(() => {
-                // คืนค่าสถานะปุ่ม
                 btn.innerHTML = originalText;
                 document.body.classList.remove('pdf-exporting');
             }).catch(err => {
@@ -218,7 +215,7 @@
             });
         }
 
-        // ดึงข้อมูลหลัก (ตามปกติ)
+        // ดึงข้อมูลหลักจาก API
         async function fetchScoreData() {
             const indicator = document.getElementById('live-indicator');
             indicator.classList.remove('bg-red-400', 'animate-ping');
@@ -227,7 +224,6 @@
             try {
                 const response = await fetch(GAS_API_URL + '?t=' + new Date().getTime());
                 
-                // ตรวจสอบว่ามี Error จากฝั่ง Server ไหม
                 if (!response.ok) {
                     throw new Error(`การเชื่อมต่อมีปัญหา (Status: ${response.status})`);
                 }
@@ -268,7 +264,6 @@
                 indicator.classList.remove('bg-red-400', 'bg-yellow-400', 'animate-ping');
                 indicator.classList.add('bg-gray-400');
                 
-                // แสดง Error บนหน้าจอให้เห็นชัดเจน
                 const tbody = document.getElementById('leaderboard-body');
                 tbody.innerHTML = `
                     <tr>
@@ -282,6 +277,7 @@
             }
         }
 
+        // อัปเดตตาราง
         function updateTable(data) {
             const tbody = document.getElementById('leaderboard-body');
             tbody.innerHTML = '';
@@ -291,9 +287,9 @@
                 let rankHtml = `<span class="font-bold text-gray-700">${rank}</span>`;
                 let rowClass = "hover:bg-blue-50 transition-colors";
                 
-                if (rank === 1) { rankHtml = `🥇 1`; rowClass = "bg-yellow-50/50"; } 
-                else if (rank === 2) { rankHtml = `🥈 2`; rowClass = "bg-gray-50/50"; } 
-                else if (rank === 3) { rankHtml = `🥉 3`; rowClass = "bg-orange-50/20"; }
+                if (rank === 1) { rankHtml = `<span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-yellow-100 text-yellow-600 font-bold border-2 border-yellow-400 shadow-sm text-lg">🥇 1</span>`; rowClass = "bg-yellow-50/50"; } 
+                else if (rank === 2) { rankHtml = `<span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-500 font-bold border-2 border-gray-300 shadow-sm">🥈 2</span>`; rowClass = "bg-gray-50/50"; } 
+                else if (rank === 3) { rankHtml = `<span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 text-orange-600 font-bold border-2 border-orange-300 shadow-sm">🥉 3</span>`; rowClass = "bg-orange-50/20"; }
 
                 const isHighTotal = team.total >= 700;
                 const totalColorClass = isHighTotal ? 'text-green-600 font-bold bg-green-50' : 'text-blue-700 font-bold bg-blue-50';
@@ -319,21 +315,18 @@
             });
         }
 
+        // อัปเดตกราฟ (พร้อมไอคอนเหรียญ)
         function updateChart(data) {
             const ctx = document.getElementById('scoreChart').getContext('2d');
             
-            // เพิ่มลำดับที่ในป้ายกำกับแกน X เพื่อให้อ่านง่าย
-            const labels = data.map((team, index) => {
-                const rank = index + 1;
-                return `${rank}. ${team.name}`;
-            });
+            const labels = data.map((team, index) => `${index + 1}. ${team.name}`);
             const scores = data.map(team => team.total);
             
             const backgroundColors = data.map((_, index) => {
-                if (index === 0) return 'rgba(250, 204, 21, 0.85)'; // ทอง
-                if (index === 1) return 'rgba(156, 163, 175, 0.85)'; // เงิน
-                if (index === 2) return 'rgba(249, 115, 22, 0.85)'; // ทองแดง
-                return 'rgba(59, 130, 246, 0.7)'; // น้ำเงินทั่วไป
+                if (index === 0) return 'rgba(250, 204, 21, 0.85)';
+                if (index === 1) return 'rgba(156, 163, 175, 0.85)';
+                if (index === 2) return 'rgba(249, 115, 22, 0.85)';
+                return 'rgba(59, 130, 246, 0.7)';
             });
 
             const borderColors = data.map((_, index) => {
@@ -343,7 +336,6 @@
                 return 'rgb(37, 99, 235)'; 
             });
 
-            // สร้าง Plugin สำหรับวาดคะแนนและลำดับที่ลงไปในกราฟ
             const customLabelsPlugin = {
                 id: 'customLabelsPlugin',
                 afterDatasetsDraw(chart) {
@@ -354,20 +346,17 @@
                         ctx.save();
                         ctx.textAlign = 'center';
                         
-                        // 1. วาด "คะแนนรวม" ไว้ด้านบนแท่งกราฟ
                         ctx.textBaseline = 'bottom';
                         ctx.font = 'bold 14px "Prompt", sans-serif';
-                        ctx.fillStyle = '#1f2937'; // สีดำ/เทาเข้ม
+                        ctx.fillStyle = '#1f2937';
                         ctx.fillText(value.toFixed(1), bar.x, bar.y - 8);
                         
-                        // 2. วาด "ไอคอนอันดับ 1,2,3" ไว้ข้างในแท่งกราฟ
                         if (bar.height > 40) {
                             ctx.textBaseline = 'top';
                             let icon = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
                             ctx.font = rank <= 3 ? '24px "Prompt", sans-serif' : 'bold 18px "Prompt", sans-serif';
                             ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
                             
-                            // ใส่เงาให้ตัวหนังสือลอยเด่นขึ้นมา
                             ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
                             ctx.shadowBlur = 4;
                             ctx.shadowOffsetX = 0;
@@ -388,21 +377,15 @@
                     data: {
                         labels: labels,
                         datasets: [{
-                            label: 'คะแนนรวม', 
-                            data: scores, 
-                            backgroundColor: backgroundColors,
-                            borderColor: borderColors,
-                            borderWidth: 2,
-                            borderRadius: 6, 
-                            barPercentage: 0.65
+                            label: 'คะแนนรวม', data: scores, backgroundColor: backgroundColors,
+                            borderColor: borderColors, borderWidth: 2, borderRadius: 6, barPercentage: 0.65
                         }]
                     },
                     plugins: [customLabelsPlugin],
                     options: {
-                        layout: { padding: { top: 30 } }, // เว้นขอบบนให้ตัวเลขคะแนนไม่ขาด
-                        responsive: true, 
-                        maintainAspectRatio: false,
-                        animation: { duration: 0 }, 
+                        layout: { padding: { top: 30 } },
+                        responsive: true, maintainAspectRatio: false,
+                        animation: { duration: 0 },
                         plugins: { 
                             legend: { display: false },
                             tooltip: {
@@ -413,15 +396,8 @@
                             }
                         },
                         scales: { 
-                            y: { 
-                                beginAtZero: true, 
-                                max: 900,
-                                grid: { color: '#e5e7eb', drawBorder: false }
-                            },
-                            x: {
-                                grid: { display: false },
-                                ticks: { font: { weight: 'bold', size: 13 }, color: '#374151' }
-                            }
+                            y: { beginAtZero: true, max: 900, grid: { color: '#e5e7eb', drawBorder: false } },
+                            x: { grid: { display: false }, ticks: { font: { weight: 'bold', size: 13 }, color: '#374151' } }
                         }
                     }
                 });
