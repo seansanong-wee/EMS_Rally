@@ -3,595 +3,1015 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EMS Rally Dashboard - จังหวัดร้อยเอ็ด</title>
+    <title>EMS Rally 101 Scoreboard</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- เพิ่ม Library สำหรับทำ PDF -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700&display=swap');
-        
+        :root {
+            --niems-red: #c8102e;
+            --niems-red-dark: #8f0b20;
+            --niems-yellow: #ffd100;
+            --niems-lime: #b7d433;
+            --ink: #1f2937;
+        }
+
+        * { box-sizing: border-box; }
+
         body {
-            font-family: 'Prompt', sans-serif;
-            background-color: #f0f4f8;
+            min-height: 100vh;
+            font-family: "Sarabun", sans-serif;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at 0 0, rgba(255, 209, 0, 0.22), transparent 28rem),
+                linear-gradient(180deg, #fffdf4 0%, #ffffff 36%, #f8fafc 100%);
         }
 
-        /* ตรึงคอลัมน์ */
-        .sticky-col-1 {
-            position: sticky; left: 0; z-index: 10;
-            background-color: white; width: 60px; min-width: 60px; text-align: center;
-        }
-        .sticky-col-2 {
-            position: sticky; left: 60px; z-index: 10;
-            background-color: white; min-width: 150px; border-right: 2px solid #e2e8f0;
-        }
-        th.sticky-col-1 { z-index: 20; background-color: #1e3a8a; color: white; }
-        th.sticky-col-2 { z-index: 20; background-color: #1e3a8a; color: white; border-right: 2px solid #3b82f6; }
-
-        .table-container {
-            overflow-x: auto;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            background: white;
+        .brand-strip {
+            height: 8px;
+            background: linear-gradient(90deg, var(--niems-red) 0%, var(--niems-red) 38%, var(--niems-yellow) 38%, var(--niems-yellow) 70%, var(--niems-lime) 70%);
         }
 
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .hero-panel {
+            background: rgba(255, 255, 255, 0.94);
+            box-shadow: 0 18px 50px rgba(31, 41, 55, 0.08);
+        }
 
-        /* รูปแบบสำหรับเวลาพิมพ์และทำ PDF */
+        .rank-1 { background: linear-gradient(135deg, #fff7c2, #ffffff); }
+        .rank-2 { background: linear-gradient(135deg, #f2f4f7, #ffffff); }
+        .rank-3 { background: linear-gradient(135deg, #ffe2c2, #ffffff); }
+
+        .modal { transition: opacity 0.2s ease, transform 0.2s ease; }
+        body.modal-active { overflow: hidden; }
+
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type="number"] { -moz-appearance: textfield; }
+
         @media print {
-            body { background-color: white !important; }
-            header, footer, .no-print { display: none !important; }
-            main { padding: 0 !important; max-width: 100% !important; margin: 0 !important; }
-            .table-container { overflow: visible !important; box-shadow: none !important; border: 1px solid #ccc !important; }
-            .sticky-col-1, .sticky-col-2 { position: static !important; border: 1px solid #ccc !important; }
-            th, td { border: 1px solid #ccc !important; padding: 6px 4px !important; font-size: 12px !important; color: black !important; }
-            th { background-color: #f3f4f6 !important; color: black !important; -webkit-print-color-adjust: exact; }
-            .shadow-sm, .shadow-inner { box-shadow: none !important; }
-            /* บังคับกระดาษแนวนอน (Landscape) */
-            @page { size: A4 landscape; margin: 1cm; }
-        }
-
-        /* คลาสช่วยสำหรับจัดหน้า PDF (ลบ sticky ตอน export) */
-        .pdf-exporting .sticky-col-1, .pdf-exporting .sticky-col-2 {
-            position: static !important;
-        }
-        .pdf-exporting .table-container {
-            overflow-x: visible !important;
+            body { background: #ffffff; padding: 0; }
+            .no-print, header .toolbar, #teamModal { display: none !important; }
+            header { position: static !important; border-bottom: 2px solid #c8102e; }
+            main { max-width: none !important; padding: 12px !important; }
+            .print-break { break-inside: avoid; }
+            .shadow-sm, .shadow-lg, .hero-panel { box-shadow: none !important; }
+            table { font-size: 12px; }
+            .chart-section { display: none !important; }
         }
     </style>
 </head>
-<body class="text-gray-800">
+<body class="pb-10">
+    <div class="brand-strip"></div>
 
-    <!-- Header (ส่วนนี้จะไม่ถูกปรินต์ออกไป) -->
-    <header class="bg-gradient-to-r from-red-600 via-red-500 to-blue-700 shadow-lg text-white py-6 px-4 relative overflow-hidden no-print">
-        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center relative z-10">
-            <div class="text-center md:text-left mb-4 md:mb-0">
-                <h1 class="text-3xl md:text-4xl font-bold tracking-wide">🚑 EMS Rally Dashboard</h1>
-                <p class="text-red-100 mt-2 text-lg">การแข่งขันประเมินสมรรถนะทีมแพทย์ฉุกเฉิน จังหวัดร้อยเอ็ด</p>
+    <header class="sticky top-0 z-30 border-b border-red-100 bg-white/95 backdrop-blur">
+        <div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
+            <div class="flex min-w-0 items-center gap-4">
+                <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-red-700 text-white shadow-lg shadow-red-900/15">
+                    <i class="fa-solid fa-truck-medical text-2xl"></i>
+                </div>
+                <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <h1 class="text-2xl font-extrabold tracking-tight text-slate-950 md:text-3xl">EMS Rally 101 Scoreboard</h1>
+                    </div>
+                    <p class="mt-1 text-sm font-medium text-slate-600">ระบบบันทึกและสรุปคะแนนการแข่งขันปฏิบัติการแพทย์ฉุกเฉิน</p>
+                </div>
             </div>
-            <div class="flex items-center bg-white/20 rounded-full px-5 py-2 backdrop-blur-sm border border-white/30 shadow-inner">
-                <span id="live-indicator" class="flex w-3 h-3 bg-red-400 rounded-full mr-3 animate-ping"></span>
-                <span class="font-semibold tracking-wide text-sm">LIVE UPDATES</span>
+
+            <div class="toolbar no-print flex flex-wrap items-center gap-2">
+                <button id="newCompetitionBtn" class="inline-flex h-10 items-center gap-2 rounded-lg border border-red-200 bg-white px-3 text-sm font-bold text-red-700 shadow-sm transition hover:bg-red-50">
+                    <i class="fa-solid fa-file-circle-plus"></i>
+                    <span>เริ่มงานใหม่</span>
+                </button>
+                <button id="importJsonBtn" class="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 shadow-sm transition hover:border-yellow-400 hover:bg-yellow-50">
+                    <i class="fa-solid fa-file-import"></i>
+                    <span>นำเข้าไฟล์</span>
+                </button>
+                <button id="templateCsvBtn" class="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 shadow-sm transition hover:border-yellow-400 hover:bg-yellow-50">
+                    <i class="fa-solid fa-file-lines"></i>
+                    <span>ไฟล์ตัวอย่าง</span>
+                </button>
+                <button id="exportJsonBtn" class="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 shadow-sm transition hover:border-lime-400 hover:bg-lime-50">
+                    <i class="fa-solid fa-file-export"></i>
+                    <span>สำรอง JSON</span>
+                </button>
+                <button id="exportCsvBtn" class="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 shadow-sm transition hover:border-lime-400 hover:bg-lime-50">
+                    <i class="fa-solid fa-table"></i>
+                    <span>CSV</span>
+                </button>
+                <button id="printBtn" class="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 shadow-sm transition hover:border-red-300 hover:bg-red-50">
+                    <i class="fa-solid fa-print"></i>
+                    <span>พิมพ์</span>
+                </button>
+                <button id="addTeamBtn" class="inline-flex h-10 items-center gap-2 rounded-lg bg-red-700 px-4 text-sm font-bold text-white shadow-lg shadow-red-900/15 transition hover:bg-red-800">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>เพิ่มทีม</span>
+                </button>
+                <input id="jsonFileInput" type="file" accept="application/json,.json,text/csv,.csv,.txt,.xlsx,.xls" class="hidden">
             </div>
         </div>
-        <div class="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-white opacity-10 blur-3xl"></div>
     </header>
 
-    <!-- Main Content -->
-    <main class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        
-        <!-- ส่วนหัวข้อและปุ่ม Export -->
-        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 no-print">
-            <h2 class="text-xl font-bold text-gray-700 flex items-center shrink-0">
-                <svg class="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                สรุปผลคะแนนแบบ Real-time
-            </h2>
-            
-            <!-- ช่องค้นหา -->
-            <div class="relative w-full md:w-64">
-                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+    <main class="mx-auto max-w-7xl px-4 py-6">
+        <section class="hero-panel print-break mb-6 overflow-hidden rounded-lg border border-red-100">
+            <div class="grid gap-0 lg:grid-cols-[1.05fr_0.95fr]">
+                <div class="p-5 md:p-6">
+                    <div class="mb-5 flex flex-wrap items-center gap-2">
+                        <span class="rounded-md bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700">LIVE SCORE</span>
+                        <span class="rounded-md bg-lime-100 px-2.5 py-1 text-xs font-bold text-lime-800">รางวัลแยก 2 ประเภท</span>
+                        <span id="lastSavedBadge" class="rounded-md bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">ยังไม่มีการบันทึก</span>
+                    </div>
+                    <h2 class="max-w-3xl text-2xl font-extrabold leading-tight text-slate-950 md:text-4xl">ตารางสรุปผลการแข่งขัน EMS Rally 101</h2>
+                    <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-600 md:text-base">บันทึกคะแนนทุกฐาน จัดอันดับปฏิบัติการและสันทนาการแยกกัน พร้อมแสดงถ้วยรางวัลอันดับ 1-5 ของแต่ละประเภท</p>
                 </div>
-                <input type="text" id="searchInput" oninput="filterAndDisplayData()" class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5 shadow-sm transition-all" placeholder="ค้นหาชื่อทีม (โรงพยาบาล)...">
+                <div class="grid grid-cols-2 border-t border-red-100 bg-gradient-to-br from-red-700 to-red-900 text-white lg:border-l lg:border-t-0">
+                    <div class="border-b border-white/15 p-5 sm:p-6">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-yellow-200">ทีมทั้งหมด</p>
+                        <p class="mt-2 text-3xl font-extrabold" id="totalTeamsCount">0</p>
+                    </div>
+                    <div class="border-b border-l border-white/15 p-5 sm:p-6">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-yellow-200">ที่ 1 ปฏิบัติการ</p>
+                        <p class="mt-2 text-3xl font-extrabold" id="topSkillScore">0</p>
+                    </div>
+                    <div class="p-5 sm:p-6">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-yellow-200">ที่ 1 สันทนาการ</p>
+                        <p class="mt-2 text-3xl font-extrabold" id="topRecreationScore">0</p>
+                    </div>
+                    <div class="border-l border-white/15 p-5 sm:p-6">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-yellow-200">ประเภทรางวัล</p>
+                        <p class="mt-2 text-3xl font-extrabold">2</p>
+                    </div>
+                </div>
             </div>
+        </section>
 
-            <!-- ปุ่มจัดการ PDF / Print และปุ่มเพิ่มทีม -->
-            <div class="flex flex-wrap justify-center gap-3 shrink-0">
-                <button onclick="openTeamModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-md transition-colors flex items-center text-sm font-semibold">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                    เพิ่มทีม
-                </button>
-                <button onclick="window.print()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg shadow-md transition-colors flex items-center text-sm font-semibold">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                    พิมพ์ (Print)
-                </button>
-                <button onclick="generatePDF()" id="pdf-btn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow-md transition-colors flex items-center text-sm font-semibold">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                    <span>ดาวน์โหลด PDF</span>
-                </button>
+        <section class="print-break mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div class="rounded-lg border border-red-100 bg-white p-5 shadow-sm">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="min-w-0">
+                        <p class="text-sm font-semibold text-slate-500">ที่ 1 คะแนนปฏิบัติการ</p>
+                        <p class="mt-1 truncate text-xl font-extrabold text-slate-950" id="firstSkillTeam">-</p>
+                    </div>
+                    <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-yellow-300 text-red-800">
+                        <i class="fa-solid fa-trophy text-xl"></i>
+                    </div>
+                </div>
             </div>
-        </div>
-
-        <!-- พื้นที่ที่ต้องการให้พิมพ์หรือทำ PDF (Printable Area) -->
-        <div id="printable-area" class="bg-white rounded-xl shadow-md p-2 md:p-6 mb-8 border border-gray-100">
-            
-            <!-- ส่วนหัวแสดงเฉพาะตอนพิมพ์ -->
-            <div class="hidden print:block text-center mb-6">
-                <h1 class="text-2xl font-bold">ผลการแข่งขัน EMS Rally จังหวัดร้อยเอ็ด</h1>
-                <p class="text-gray-600 mt-1" id="print-time"></p>
+            <div class="rounded-lg border border-yellow-200 bg-white p-5 shadow-sm">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="min-w-0">
+                        <p class="text-sm font-semibold text-slate-500">ที่ 1 คะแนนสันทนาการ</p>
+                        <p class="mt-1 truncate text-xl font-extrabold text-slate-950" id="firstRecreationTeam">-</p>
+                    </div>
+                    <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-700">
+                        <i class="fa-solid fa-trophy text-xl"></i>
+                    </div>
+                </div>
             </div>
-
-            <!-- กราฟ -->
-            <div class="relative h-64 md:h-80 w-full mb-8">
-                <canvas id="scoreChart"></canvas>
+            <div class="rounded-lg border border-lime-200 bg-white p-5 shadow-sm">
+                <div class="flex items-center justify-between gap-3">
+                    <div>
+                        <p class="text-sm font-semibold text-slate-500">คะแนนทักษะเฉลี่ย</p>
+                        <p class="mt-1 text-xl font-extrabold text-slate-950" id="avgSkill">0</p>
+                    </div>
+                    <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-lime-100 text-lime-800">
+                        <i class="fa-solid fa-kit-medical text-xl"></i>
+                    </div>
+                </div>
             </div>
+            <div class="rounded-lg border border-yellow-200 bg-white p-5 shadow-sm">
+                <div class="flex items-center justify-between gap-3">
+                    <div>
+                        <p class="text-sm font-semibold text-slate-500">คะแนนสันทนาการเฉลี่ย</p>
+                        <p class="mt-1 text-xl font-extrabold text-slate-950" id="avgRecreation">0</p>
+                    </div>
+                    <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-yellow-100 text-yellow-800">
+                        <i class="fa-solid fa-people-group text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-            <!-- ตารางคะแนน -->
-            <div class="table-container bg-white border border-gray-200">
-                <table class="min-w-full text-sm text-left whitespace-nowrap">
-                    <thead class="bg-blue-900 text-white uppercase text-xs font-semibold">
+        <section class="chart-section mb-6 grid grid-cols-1 gap-5 xl:grid-cols-2">
+            <div class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="mb-4 flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                    <h3 class="flex items-center gap-2 text-base font-extrabold text-slate-950">
+                        <i class="fa-solid fa-chart-column text-lime-700"></i>
+                        คะแนนทักษะปฏิบัติการ
+                    </h3>
+                    <span class="rounded-md bg-lime-100 px-2 py-1 text-xs font-bold text-lime-800">800 คะแนน</span>
+                </div>
+                <div class="relative h-80 w-full"><canvas id="skillsChart"></canvas></div>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="mb-4 flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                    <h3 class="flex items-center gap-2 text-base font-extrabold text-slate-950">
+                        <i class="fa-solid fa-chart-pie text-yellow-500"></i>
+                        คะแนนสันทนาการ
+                    </h3>
+                    <span class="rounded-md bg-yellow-100 px-2 py-1 text-xs font-bold text-yellow-800">200 คะแนน</span>
+                </div>
+                <div class="relative h-80 w-full"><canvas id="recreationChart"></canvas></div>
+            </div>
+        </section>
+
+        <section class="print-break overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+            <div class="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 p-4 lg:flex-row lg:items-center lg:justify-between">
+                <h2 class="flex items-center gap-2 text-lg font-extrabold text-slate-950">
+                    <i class="fa-solid fa-medal text-yellow-500"></i>
+                    ตารางคะแนนแยกประเภทรางวัล
+                </h2>
+                <div class="no-print flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <label class="relative w-full sm:w-72">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400"></i>
+                        <input id="teamSearch" type="search" placeholder="ค้นหาทีม" class="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm font-medium outline-none transition focus:border-red-500 focus:ring-4 focus:ring-red-100">
+                    </label>
+                    <select id="rankFilter" class="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 outline-none transition focus:border-red-500 focus:ring-4 focus:ring-red-100">
+                        <option value="all">ทุกทีม</option>
+                        <option value="award">เฉพาะถ้วยรางวัล 1-5</option>
+                    </select>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-[1040px] text-left">
+                    <thead class="bg-white text-xs font-extrabold uppercase tracking-wide text-slate-500">
                         <tr>
-                            <th class="px-4 py-3 text-center sticky-col-1">อันดับ</th>
-                            <th class="px-4 py-3 sticky-col-2">ชื่อทีม (รพ.)</th>
-                            <th class="px-4 py-3 text-center bg-red-600 font-bold text-base print:bg-gray-300 print:text-black">รวม (900)</th>
-                            <th class="px-3 py-3 text-center" title="1.ประเมินผู้ป่วย(20) 2.วินิจฉัยตัดสินใจ(15) 3.ทักษะปฏิบัติการ(15) 4.ทำงานเป็นทีม(10) 5.สื่อสาร 1669(10) 6.บริหารเวลา(10) 7.ความปลอดภัย(5) 8.มารยาท/จริยธรรม(5) 9.ประเมินสมรรถนะ(10)">ฐาน 1 MCI<br><span class="font-normal">(100)</span></th>
-                            <th class="px-3 py-3 text-center" title="1.ประเมินผู้ป่วย(20) 2.วินิจฉัยตัดสินใจ(15) 3.ทักษะปฏิบัติการ(15) 4.ทำงานเป็นทีม(10) 5.สื่อสาร 1669(10) 6.บริหารเวลา(10) 7.ความปลอดภัย(5) 8.มารยาท/จริยธรรม(5) 9.ประเมินสมรรถนะ(10)">ฐาน 2 Peds<br><span class="font-normal">(100)</span></th>
-                            <th class="px-3 py-3 text-center" title="1.ประเมินผู้ป่วย(20) 2.วินิจฉัยตัดสินใจ(15) 3.ทักษะปฏิบัติการ(15) 4.ทำงานเป็นทีม(10) 5.สื่อสาร 1669(10) 6.บริหารเวลา(10) 7.ความปลอดภัย(5) 8.มารยาท/จริยธรรม(5) 9.ประเมินสมรรถนะ(10)">ฐาน 3 Labor<br><span class="font-normal">(100)</span></th>
-                            <th class="px-3 py-3 text-center" title="1.ประเมินผู้ป่วย(20) 2.วินิจฉัยตัดสินใจ(15) 3.ทักษะปฏิบัติการ(15) 4.ทำงานเป็นทีม(10) 5.สื่อสาร 1669(10) 6.บริหารเวลา(10) 7.ความปลอดภัย(5) 8.มารยาท/จริยธรรม(5) 9.ประเมินสมรรถนะ(10)">ฐาน 4 TBI<br><span class="font-normal">(100)</span></th>
-                            <th class="px-3 py-3 text-center" title="1.ประเมินผู้ป่วย(20) 2.วินิจฉัยตัดสินใจ(15) 3.ทักษะปฏิบัติการ(15) 4.ทำงานเป็นทีม(10) 5.สื่อสาร 1669(10) 6.บริหารเวลา(10) 7.ความปลอดภัย(5) 8.มารยาท/จริยธรรม(5) 9.ประเมินสมรรถนะ(10)">ฐาน 5 Trauma<br><span class="font-normal">(100)</span></th>
-                            <th class="px-3 py-3 text-center" title="1.ประเมินผู้ป่วย(20) 2.วินิจฉัยตัดสินใจ(15) 3.ทักษะปฏิบัติการ(15) 4.ทำงานเป็นทีม(10) 5.สื่อสาร 1669(10) 6.บริหารเวลา(10) 7.ความปลอดภัย(5) 8.มารยาท/จริยธรรม(5) 9.ประเมินสมรรถนะ(10)">ฐาน 6 Arrest<br><span class="font-normal">(100)</span></th>
-                            <th class="px-3 py-3 text-center" title="1.ประเมินผู้ป่วย(20) 2.วินิจฉัยตัดสินใจ(15) 3.ทักษะปฏิบัติการ(15) 4.ทำงานเป็นทีม(10) 5.สื่อสาร 1669(10) 6.บริหารเวลา(10) 7.ความปลอดภัย(5) 8.มารยาท/จริยธรรม(5) 9.ประเมินสมรรถนะ(10)">ฐาน 7 Stroke<br><span class="font-normal">(100)</span></th>
-                            <th class="px-3 py-3 text-center" title="1.ประเมินผู้ป่วย(20) 2.วินิจฉัยตัดสินใจ(15) 3.ทักษะปฏิบัติการ(15) 4.ทำงานเป็นทีม(10) 5.สื่อสาร 1669(10) 6.บริหารเวลา(10) 7.ความปลอดภัย(5) 8.มารยาท/จริยธรรม(5) 9.ประเมินสมรรถนะ(10)">ฐาน 8 STEMI<br><span class="font-normal">(100)</span></th>
-                            <th class="px-3 py-3 text-center text-purple-200">ฐาน 9 สันทนาการ 1<br><span class="font-normal text-white">(50)</span></th>
-                            <th class="px-3 py-3 text-center text-purple-200">ฐาน 10 สันทนาการ 2<br><span class="font-normal text-white">(50)</span></th>
+                            <th class="px-4 py-3 text-center">อันดับปฏิบัติการ</th>
+                            <th class="px-4 py-3">ชื่อทีม</th>
+                            <th class="px-4 py-3 text-center text-lime-700">ปฏิบัติการ (800)</th>
+                            <th class="px-4 py-3 text-center">ถ้วยปฏิบัติการ</th>
+                            <th class="px-4 py-3 text-center text-yellow-700">สันทนาการ (200)</th>
+                            <th class="px-4 py-3 text-center">อันดับสันทนาการ</th>
+                            <th class="px-4 py-3 text-center">ถ้วยสันทนาการ</th>
+                            <th class="no-print px-4 py-3 text-center">จัดการ</th>
                         </tr>
                     </thead>
-                    <tbody id="leaderboard-body" class="divide-y divide-gray-200">
-                        <tr>
-                            <td colspan="13" class="px-6 py-12 text-center text-gray-500">
-                                <div class="flex justify-center items-center flex-col">
-                                    <svg class="animate-spin h-8 w-8 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                    <p>กำลังเชื่อมต่อข้อมูลจาก Google Sheets...</p>
+                    <tbody id="leaderboardBody" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <div id="teamModal" class="modal fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/60 p-4">
+        <div class="max-h-[92vh] w-full max-w-4xl overflow-hidden rounded-lg bg-white shadow-2xl">
+            <div class="flex items-center justify-between gap-4 border-b border-slate-200 bg-red-700 px-5 py-4 text-white">
+                <div>
+                    <h3 id="modalTitle" class="text-lg font-extrabold">เพิ่มทีมแข่งขัน</h3>
+                    <p class="text-xs font-medium text-red-100">กรอกคะแนน 0-100 ในแต่ละฐาน ระบบจะแยกคะแนนปฏิบัติการและสันทนาการให้อัตโนมัติ</p>
+                </div>
+                <button id="closeModalBtn" title="ปิด" class="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-white transition hover:bg-white/20">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="teamForm" class="max-h-[calc(92vh-73px)] overflow-y-auto p-5">
+                <input type="hidden" id="editingTeamId">
+                <label class="block">
+                    <span class="mb-1 block text-sm font-bold text-slate-700">ชื่อทีม</span>
+                    <input id="teamNameInput" required maxlength="80" class="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm font-semibold outline-none transition focus:border-red-500 focus:ring-4 focus:ring-red-100" placeholder="เช่น ทีม รพ.ศูนย์การแพทย์">
+                </label>
+
+                <div class="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[1fr_0.7fr]">
+                    <div>
+                        <div class="mb-3 flex items-center justify-between gap-3">
+                            <h4 class="font-extrabold text-slate-950">ฐานทักษะปฏิบัติการ</h4>
+                            <span class="rounded-md bg-lime-100 px-2 py-1 text-xs font-bold text-lime-800">ฐานละ 100</span>
+                        </div>
+                        <div id="skillScoreInputs" class="grid grid-cols-1 gap-3 sm:grid-cols-2"></div>
+                    </div>
+
+                    <div>
+                        <div class="mb-3 flex items-center justify-between gap-3">
+                            <h4 class="font-extrabold text-slate-950">ฐานสันทนาการ</h4>
+                            <span class="rounded-md bg-yellow-100 px-2 py-1 text-xs font-bold text-yellow-800">ฐานละ 100</span>
+                        </div>
+                        <div id="recreationScoreInputs" class="grid grid-cols-1 gap-3"></div>
+
+                        <div class="mt-4 rounded-lg border border-red-100 bg-red-50 p-4">
+                            <p class="text-sm font-bold text-red-800">คะแนนขณะกรอก</p>
+                            <div class="mt-2 grid grid-cols-2 gap-3">
+                                <div>
+                                    <p class="text-xs font-bold text-lime-800">ปฏิบัติการ</p>
+                                    <p class="text-2xl font-extrabold text-red-900"><span id="liveSkillScore">0</span> <span class="text-sm">/ 800</span></p>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-bold text-yellow-800">สันทนาการ</p>
+                                    <p class="text-2xl font-extrabold text-red-900"><span id="liveRecreationScore">0</span> <span class="text-sm">/ 200</span></p>
+                                </div>
+                            </div>
+                            <p id="scoreWarning" class="mt-2 hidden text-xs font-bold text-red-700">ตรวจพบคะแนนนอกช่วง 0-100 ระบบจะปรับให้อัตโนมัติเมื่อบันทึก</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end">
+                    <button type="button" id="cancelModalBtn" class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
+                        ยกเลิก
+                    </button>
+                    <button type="submit" class="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-red-700 px-5 text-sm font-bold text-white shadow-lg shadow-red-900/15 transition hover:bg-red-800">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        บันทึกข้อมูล
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = "emsRally101TeamsV2";
+        const LEGACY_STORAGE_KEY = "emsRallyTeams";
+        const LAST_SAVED_KEY = "emsRally101LastSaved";
+
+        const STATIONS = [
+            { id: "s1", name: "MCI", part: 1 },
+            { id: "s2", name: "Pediatric", part: 1 },
+            { id: "s3", name: "Labor", part: 1 },
+            { id: "s4", name: "TBI", part: 1 },
+            { id: "s5", name: "Multiple Trauma", part: 1 },
+            { id: "s6", name: "Cardiac", part: 1 },
+            { id: "s7", name: "Stroke", part: 1 },
+            { id: "s8", name: "STEMI", part: 1 },
+            { id: "s9", name: "สันทนาการ 1", part: 2 },
+            { id: "s10", name: "สันทนาการ 2", part: 2 }
+        ];
+
+        const sampleTeams = [
+            { id: "T001", name: "ทีม รพ.ศูนย์การแพทย์", scores: { s1: 85, s2: 90, s3: 88, s4: 92, s5: 85, s6: 95, s7: 90, s8: 88, s9: 95, s10: 90 } },
+            { id: "T002", name: "ทีม มูลนิธิกู้ภัยร่วมใจ", scores: { s1: 90, s2: 85, s3: 82, s4: 80, s5: 88, s6: 90, s7: 85, s8: 85, s9: 100, s10: 95 } },
+            { id: "T003", name: "ทีม อบต.กู้ชีพ", scores: { s1: 75, s2: 80, s3: 78, s4: 85, s5: 80, s6: 82, s7: 75, s8: 80, s9: 85, s10: 80 } },
+            { id: "T004", name: "ทีม เทศบาลพิทักษ์ชีพ", scores: { s1: 88, s2: 92, s3: 90, s4: 85, s5: 90, s6: 88, s7: 92, s8: 90, s9: 80, s10: 85 } },
+            { id: "T005", name: "ทีม รพ.สต.รวมพลัง", scores: { s1: 70, s2: 75, s3: 70, s4: 72, s5: 75, s6: 80, s7: 78, s8: 75, s9: 90, s10: 92 } }
+        ];
+
+        let teams = loadTeams();
+        let charts = {};
+
+        const dom = {};
+
+        function initDom() {
+            [
+                "addTeamBtn", "newCompetitionBtn", "importJsonBtn", "templateCsvBtn", "exportJsonBtn", "exportCsvBtn", "printBtn", "jsonFileInput",
+                "teamModal", "teamForm", "closeModalBtn", "cancelModalBtn", "editingTeamId", "teamNameInput",
+                "skillScoreInputs", "recreationScoreInputs", "liveSkillScore", "liveRecreationScore", "scoreWarning", "modalTitle",
+                "teamSearch", "rankFilter", "leaderboardBody", "totalTeamsCount", "topSkillScore", "topRecreationScore", "firstSkillTeam", "firstRecreationTeam",
+                "avgSkill", "avgRecreation", "lastSavedBadge"
+            ].forEach((id) => { dom[id] = document.getElementById(id); });
+        }
+
+        function cloneData(data) {
+            return JSON.parse(JSON.stringify(data));
+        }
+
+        function loadTeams() {
+            const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
+            if (!saved) return cloneData(sampleTeams);
+
+            try {
+                const parsed = JSON.parse(saved);
+                return sanitizeImportedTeams(Array.isArray(parsed) ? parsed : parsed.teams);
+            } catch {
+                return cloneData(sampleTeams);
+            }
+        }
+
+        function sanitizeImportedTeams(inputTeams) {
+            if (!Array.isArray(inputTeams)) return cloneData(sampleTeams);
+
+            return inputTeams
+                .map((team, index) => {
+                    const scores = {};
+                    STATIONS.forEach((station) => {
+                        scores[station.id] = clampScore(team?.scores?.[station.id] ?? team?.[station.id] ?? 0);
+                    });
+
+                    return {
+                        id: String(team?.id || `T${String(index + 1).padStart(3, "0")}`),
+                        name: String(team?.name || `ทีม ${index + 1}`).trim().slice(0, 80),
+                        scores
+                    };
+                })
+                .filter((team) => team.name);
+        }
+
+        function persistTeams() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(teams));
+            localStorage.setItem(LAST_SAVED_KEY, new Date().toISOString());
+            renderLastSaved();
+        }
+
+        function renderLastSaved() {
+            const iso = localStorage.getItem(LAST_SAVED_KEY);
+            dom.lastSavedBadge.textContent = iso
+                ? `บันทึกล่าสุด ${new Date(iso).toLocaleString("th-TH", { dateStyle: "short", timeStyle: "short" })}`
+                : "ยังไม่มีการบันทึก";
+        }
+
+        function getRankedTeams() {
+            const scoredTeams = teams.map((team) => {
+                const part1Total = STATIONS.filter((station) => station.part === 1).reduce((sum, station) => sum + Number(team.scores[station.id] || 0), 0);
+                const part2Total = STATIONS.filter((station) => station.part === 2).reduce((sum, station) => sum + Number(team.scores[station.id] || 0), 0);
+                return { ...team, part1Total, part2Total };
+            });
+
+            const skillRanks = buildRankMap(scoredTeams, "part1Total", "part2Total");
+            const recreationRanks = buildRankMap(scoredTeams, "part2Total", "part1Total");
+
+            return scoredTeams
+                .map((team) => ({
+                    ...team,
+                    skillRank: skillRanks.get(team.id),
+                    recreationRank: recreationRanks.get(team.id)
+                }))
+                .sort((a, b) => a.skillRank - b.skillRank || a.recreationRank - b.recreationRank || a.name.localeCompare(b.name, "th"));
+        }
+
+        function buildRankMap(scoredTeams, primaryField, secondaryField) {
+            const ranked = [...scoredTeams].sort((a, b) => b[primaryField] - a[primaryField] || b[secondaryField] - a[secondaryField] || a.name.localeCompare(b.name, "th"));
+            return new Map(ranked.map((team, index) => [team.id, index + 1]));
+        }
+
+        function renderSummary(ranked) {
+            const totalTeams = teams.length;
+            const topSkill = [...ranked].sort((a, b) => a.skillRank - b.skillRank)[0];
+            const topRecreation = [...ranked].sort((a, b) => a.recreationRank - b.recreationRank)[0];
+            const skillAvg = totalTeams ? Math.round(ranked.reduce((sum, team) => sum + team.part1Total, 0) / totalTeams) : 0;
+            const recreationAvg = totalTeams ? Math.round(ranked.reduce((sum, team) => sum + team.part2Total, 0) / totalTeams) : 0;
+
+            dom.totalTeamsCount.textContent = totalTeams.toLocaleString("th-TH");
+            dom.topSkillScore.textContent = topSkill ? topSkill.part1Total.toLocaleString("th-TH") : "0";
+            dom.topRecreationScore.textContent = topRecreation ? topRecreation.part2Total.toLocaleString("th-TH") : "0";
+            dom.firstSkillTeam.textContent = topSkill ? topSkill.name : "-";
+            dom.firstRecreationTeam.textContent = topRecreation ? topRecreation.name : "-";
+            dom.avgSkill.textContent = `${skillAvg.toLocaleString("th-TH")} / 800`;
+            dom.avgRecreation.textContent = `${recreationAvg.toLocaleString("th-TH")} / 200`;
+        }
+
+        function renderLeaderboard(ranked) {
+            const keyword = dom.teamSearch.value.trim().toLowerCase();
+            const filter = dom.rankFilter.value;
+            const rows = ranked
+                .filter((team) => team.name.toLowerCase().includes(keyword))
+                .filter((team) => filter === "all" || team.skillRank <= 5 || team.recreationRank <= 5)
+                .map((team) => {
+                    const rankClass = team.skillRank <= 3 ? `rank-${team.skillRank}` : "";
+
+                    return `
+                        <tr class="${rankClass} transition hover:bg-red-50/50">
+                            <td class="px-4 py-4 text-center">
+                                <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg ${team.skillRank === 1 ? "bg-yellow-300 text-red-900" : "bg-slate-100 text-slate-700"} font-extrabold">${team.skillRank}</span>
+                            </td>
+                            <td class="px-4 py-4">
+                                <p class="font-extrabold text-slate-950">${escapeHtml(team.name)}</p>
+                                <p class="text-xs font-medium text-slate-500">รหัสทีม ${escapeHtml(team.id)}</p>
+                            </td>
+                            <td class="px-4 py-4 text-center font-extrabold text-lime-700">${team.part1Total.toLocaleString("th-TH")}</td>
+                            <td class="px-4 py-4 text-center">${getAward(team.skillRank)}</td>
+                            <td class="px-4 py-4 text-center font-extrabold text-yellow-700">${team.part2Total.toLocaleString("th-TH")}</td>
+                            <td class="px-4 py-4 text-center">
+                                <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg ${team.recreationRank === 1 ? "bg-yellow-300 text-red-900" : "bg-slate-100 text-slate-700"} font-extrabold">${team.recreationRank}</span>
+                            </td>
+                            <td class="px-4 py-4 text-center">${getAward(team.recreationRank)}</td>
+                            <td class="no-print px-4 py-4">
+                                <div class="flex items-center justify-center gap-1">
+                                    <button data-action="edit" data-id="${escapeHtml(team.id)}" title="แก้ไขคะแนน" class="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-yellow-100 hover:text-yellow-700">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                    <button data-action="delete" data-id="${escapeHtml(team.id)}" title="ลบทีม" class="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-red-50 hover:text-red-700">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
-                    </tbody>
-                </table>
-            </div>
-            
-            <!-- ส่วนท้ายแสดงเฉพาะตอนพิมพ์ (ลายเซ็นกรรมการ) -->
-            <div class="hidden print:flex justify-end mt-12 gap-16 mr-10">
-                <div class="text-center">
-                    <p>ลงชื่อ..........................................................</p>
-                    <p class="mt-2">(..........................................................)</p>
-                    <p class="mt-1">กรรมการ/ผู้สรุปผลคะแนน</p>
-                </div>
-            </div>
-
-        </div>
-    </main>
-
-    <!-- Modal สำหรับ เพิ่ม/แก้ไข ทีม -->
-    <div id="teamModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 overflow-y-auto h-full w-full z-50 flex items-center justify-center no-print">
-        <div class="relative mx-auto p-6 border w-96 shadow-2xl rounded-xl bg-white transition-all transform scale-100">
-            <h3 id="modalTitle" class="text-xl font-bold text-gray-900 mb-4 flex items-center">
-                <svg class="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m3-4h1m-1 4h1m-5 8h8"></path></svg>
-                เพิ่มชื่อทีมใหม่
-            </h3>
-            <div class="mb-5">
-                <label for="teamNameInput" class="block text-sm font-medium text-gray-700 mb-2">ชื่อทีม / โรงพยาบาล</label>
-                <input type="text" id="teamNameInput" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="ระบุชื่อทีม...">
-                <p id="modalError" class="text-red-500 text-xs mt-2 hidden">กรุณากรอกชื่อทีม!</p>
-            </div>
-            <div class="flex justify-end gap-3">
-                <button onclick="closeTeamModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg text-sm font-semibold transition-colors">ยกเลิก</button>
-                <button onclick="saveTeam()" id="saveTeamBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors flex items-center">
-                    บันทึกข้อมูล
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal โชว์ข้อความแจ้งเตือน -->
-    <div id="alertModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 overflow-y-auto h-full w-full z-[60] flex items-center justify-center no-print">
-        <div class="relative mx-auto p-6 border w-80 shadow-2xl rounded-xl bg-white text-center">
-            <div id="alertIcon" class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-                <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-            </div>
-            <h3 id="alertTitle" class="text-lg font-bold text-gray-900 mb-2">สำเร็จ</h3>
-            <p id="alertMessage" class="text-sm text-gray-500 mb-5">ดำเนินการเสร็จสิ้น</p>
-            <button onclick="closeAlertModal()" class="w-full px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-sm font-semibold transition-colors">ตกลง</button>
-        </div>
-    </div>
-
-    <!-- Footer -->
-    <footer class="bg-gray-800 text-white py-6 mt-6 border-t-4 border-red-500 no-print">
-        <div class="max-w-7xl mx-auto px-4 text-center">
-            <p class="text-lg font-semibold tracking-wide">🏆 EMS Rally จังหวัดร้อยเอ็ด</p>
-            <div class="mt-4 pt-4 border-t border-gray-700 flex flex-col md:flex-row justify-center items-center text-sm">
-                <span class="text-gray-300">พัฒนาโดย:</span>
-                <span class="ml-2 font-bold text-blue-300 bg-blue-900/30 px-3 py-1 rounded-full border border-blue-800/50">นายทวี แสนสนอง (หัวหน้า ER โรงพยาบาลเสลภูมิ)</span>
-            </div>
-        </div>
-    </footer>
-
-    <script>
-        const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwmTMpSUBxFlO1E8EMHzzYQHO49sLRP5rqbve6XoB1MZg9wmsqyoqUm6lL-_x8NyKqK/exec';
-        let scoreChart = null;
-        let allTeamData = []; 
-        let isModalOpen = false; // ป้องกันการรีเฟรชออโต้ตอนเปิด Modal
-
-        // สถานะการแก้ไขทีม
-        let isEditingMode = false;
-        let editingOldName = "";
-
-        // ฟังก์ชันจัดการ Modal สรุปข้อความ
-        function showAlert(title, message, isSuccess = true) {
-            document.getElementById('alertTitle').innerText = title;
-            document.getElementById('alertMessage').innerText = message;
-            const iconWrap = document.getElementById('alertIcon');
-            if (isSuccess) {
-                iconWrap.className = 'mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4';
-                iconWrap.innerHTML = `<svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
-            } else {
-                iconWrap.className = 'mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4';
-                iconWrap.innerHTML = `<svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`;
-            }
-            document.getElementById('alertModal').classList.remove('hidden');
-        }
-        function closeAlertModal() {
-            document.getElementById('alertModal').classList.add('hidden');
-        }
-
-        // ฟังก์ชันเปิด-ปิด Modal ทีม
-        function openTeamModal(teamNameToEdit = null) {
-            isModalOpen = true;
-            document.getElementById('modalError').classList.add('hidden');
-            const input = document.getElementById('teamNameInput');
-            
-            if (teamNameToEdit) {
-                isEditingMode = true;
-                editingOldName = teamNameToEdit;
-                document.getElementById('modalTitle').innerHTML = `<svg class="w-6 h-6 mr-2 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg> แก้ไขชื่อทีม`;
-                input.value = teamNameToEdit;
-            } else {
-                isEditingMode = false;
-                editingOldName = "";
-                document.getElementById('modalTitle').innerHTML = `<svg class="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m3-4h1m-1 4h1m-5 8h8"></path></svg> เพิ่มทีมใหม่`;
-                input.value = "";
-            }
-            document.getElementById('teamModal').classList.remove('hidden');
-            input.focus();
-        }
-
-        function closeTeamModal() {
-            isModalOpen = false;
-            document.getElementById('teamModal').classList.add('hidden');
-        }
-
-        // ฟังก์ชันส่งคำสั่งไป Google Sheet (POST)
-        async function saveTeam() {
-            const input = document.getElementById('teamNameInput');
-            const newName = input.value.trim();
-            const errorMsg = document.getElementById('modalError');
-            
-            if (newName === "") {
-                errorMsg.classList.remove('hidden');
-                return;
-            }
-            errorMsg.classList.add('hidden');
-
-            const btn = document.getElementById('saveTeamBtn');
-            const originalBtnText = btn.innerHTML;
-            btn.innerHTML = `<svg class="animate-spin h-4 w-4 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> กำลังบันทึก...`;
-            btn.disabled = true;
-
-            const payload = isEditingMode 
-                ? { action: "editTeam", oldName: editingOldName, newName: newName }
-                : { action: "addTeam", teamName: newName };
-
-            try {
-                // ส่ง POST ไปยัง Google Apps Script (ใช้ text/plain เพื่อเลี่ยง CORS Error)
-                const response = await fetch(GAS_API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(payload)
-                });
-                
-                const result = await response.json();
-                
-                if (result.status === "success") {
-                    closeTeamModal();
-                    showAlert("บันทึกสำเร็จ", isEditingMode ? "แก้ไขชื่อทีมเรียบร้อยแล้ว" : "เพิ่มทีมใหม่ลงในชีตเรียบร้อยแล้ว", true);
-                    fetchScoreData(); // โหลดข้อมูลตารางใหม่ทันที
-                } else {
-                    showAlert("เกิดข้อผิดพลาด", result.message, false);
-                }
-            } catch (err) {
-                showAlert("เกิดข้อผิดพลาด", "ไม่สามารถติดต่อ Google Sheet ได้ โปรดเช็คการตั้งค่า Deploy", false);
-                console.error(err);
-            } finally {
-                btn.innerHTML = originalBtnText;
-                btn.disabled = false;
-            }
-        }
-
-        // อัปเดตเวลาพิมพ์ใน PDF
-        function updatePrintTime() {
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
-            const timeStr = now.toLocaleTimeString('th-TH');
-            document.getElementById('print-time').innerText = `ข้อมูลอัปเดตล่าสุด ณ วันที่ ${dateStr} เวลา ${timeStr} น.`;
-        }
-
-        // ฟังก์ชันสร้าง PDF
-        function generatePDF() {
-            const btn = document.getElementById('pdf-btn');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = `<svg class="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>กำลังสร้าง PDF...`;
-            
-            updatePrintTime();
-            document.body.classList.add('pdf-exporting');
-
-            const element = document.getElementById('printable-area');
-            
-            const opt = {
-                margin:       [0.5, 0.5, 0.5, 0.5],
-                filename:     `ผลคะแนน_EMS_Rally_${new Date().getTime()}.pdf`,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true, windowWidth: 1200 },
-                jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
-            };
-
-            html2pdf().set(opt).from(element).save().then(() => {
-                btn.innerHTML = originalText;
-                document.body.classList.remove('pdf-exporting');
-            }).catch(err => {
-                console.error("PDF Error: ", err);
-                btn.innerHTML = originalText;
-                document.body.classList.remove('pdf-exporting');
-                alert("เกิดข้อผิดพลาดในการสร้าง PDF");
-            });
-        }
-
-        // ดึงข้อมูลหลักจาก API
-        async function fetchScoreData() {
-            if (isModalOpen) return; // ถ้าเปิดหน้าต่างแก้ไขอยู่ ให้หยุดรีเฟรชชั่วคราวเพื่อไม่ให้ขัดจังหวะ
-
-            const indicator = document.getElementById('live-indicator');
-            indicator.classList.remove('bg-red-400', 'animate-ping');
-            indicator.classList.add('bg-yellow-400');
-
-            try {
-                const response = await fetch(GAS_API_URL + '?t=' + new Date().getTime());
-                
-                if (!response.ok) {
-                    throw new Error(`การเชื่อมต่อมีปัญหา (Status: ${response.status})`);
-                }
-                
-                const responseText = await response.text();
-                let data;
-                try {
-                    data = JSON.parse(responseText);
-                } catch (e) {
-                    console.error("ค่าที่ได้ไม่ใช่ JSON:", responseText);
-                    throw new Error("URL ของ Apps Script อาจตั้งค่าสิทธิ์ผิด (ไม่ได้เปิดเป็น 'ทุกคน')");
-                }
-
-                if (!Array.isArray(data)) {
-                    throw new Error("รูปแบบข้อมูลที่ได้จาก Sheet ไม่ถูกต้อง");
-                }
-                
-                const processedData = data.map(team => {
-                    const totalScore = (parseFloat(team.c1)||0) + (parseFloat(team.c2)||0) + (parseFloat(team.c3)||0) + 
-                                       (parseFloat(team.c4)||0) + (parseFloat(team.c5)||0) + (parseFloat(team.c6)||0) + 
-                                       (parseFloat(team.c7)||0) + (parseFloat(team.c8)||0) + (parseFloat(team.c9)||0) + (parseFloat(team.c10)||0);
-                    return { ...team, total: totalScore };
+                    `;
                 });
 
-                // จัดเรียงคะแนน
-                processedData.sort((a, b) => b.total - a.total);
-
-                // เก็บข้อมูลทั้งหมด และเรียกฟังก์ชันกรองข้อมูล
-                allTeamData = processedData;
-                filterAndDisplayData();
-                updatePrintTime(); 
-
-                setTimeout(() => {
-                    indicator.classList.remove('bg-yellow-400', 'bg-gray-400');
-                    indicator.classList.add('bg-red-400', 'animate-ping');
-                }, 500);
-
-            } catch (error) {
-                console.error("Error:", error);
-                indicator.classList.remove('bg-red-400', 'bg-yellow-400', 'animate-ping');
-                indicator.classList.add('bg-gray-400');
-                
-                const tbody = document.getElementById('leaderboard-body');
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="13" class="px-6 py-8 text-center text-red-500 bg-red-50 font-semibold border-b border-red-200">
-                            <svg class="w-8 h-8 mx-auto mb-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            พบข้อผิดพลาด: ${error.message} <br>
-                            <span class="text-sm text-gray-600 font-normal mt-2 inline-block">โปรดตรวจสอบการตั้งค่า Deploy ของ Google Apps Script อีกครั้ง</span>
-                        </td>
-                    </tr>
-                `;
-            }
+            dom.leaderboardBody.innerHTML = rows.join("") || `
+                <tr>
+                    <td colspan="8" class="px-4 py-10 text-center text-sm font-semibold text-slate-500">ไม่พบข้อมูลทีม</td>
+                </tr>
+            `;
         }
 
-        // ฟังก์ชันค้นหาและกรองข้อมูล (เพิ่มใหม่)
-        function filterAndDisplayData() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
-            
-            // กรองข้อมูลตามชื่อทีม
-            const filteredData = allTeamData.filter(team => {
-                return team.name.toLowerCase().includes(searchTerm);
-            });
-
-            // อัปเดตตารางและกราฟด้วยข้อมูลที่ถูกกรอง
-            updateTable(filteredData);
-            updateChart(filteredData);
-        }
-
-        // อัปเดตตาราง
-        function updateTable(data) {
-            const tbody = document.getElementById('leaderboard-body');
-            tbody.innerHTML = '';
-
-            // ถ้าค้นหาแล้วไม่เจอข้อมูล
-            if (data.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="13" class="px-6 py-8 text-center text-gray-500 bg-gray-50">
-                            ไม่พบชื่อทีมที่ค้นหา
-                        </td>
-                    </tr>
-                `;
-                return;
+        function getAward(rank) {
+            if (rank > 5) {
+                return '<span class="inline-flex rounded-md bg-slate-100 px-2.5 py-1 text-xs font-extrabold text-slate-500">-</span>';
             }
 
-            data.forEach((team, index) => {
-                const rank = index + 1;
-                let rankHtml = `<span class="font-bold text-gray-700">${rank}</span>`;
-                let rowClass = "hover:bg-blue-50 transition-colors";
-                
-                if (rank === 1) { rankHtml = `<span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-yellow-100 text-yellow-600 font-bold border-2 border-yellow-400 shadow-sm text-lg">🥇 1</span>`; rowClass = "bg-yellow-50/50"; } 
-                else if (rank === 2) { rankHtml = `<span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-500 font-bold border-2 border-gray-300 shadow-sm">🥈 2</span>`; rowClass = "bg-gray-50/50"; } 
-                else if (rank === 3) { rankHtml = `<span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 text-orange-600 font-bold border-2 border-orange-300 shadow-sm">🥉 3</span>`; rowClass = "bg-orange-50/20"; }
-
-                const isHighTotal = team.total >= 700;
-                const totalColorClass = isHighTotal ? 'text-green-600 font-bold bg-green-50' : 'text-blue-700 font-bold bg-blue-50';
-
-                const tr = document.createElement('tr');
-                tr.className = rowClass;
-                // เพิ่มปุ่มแก้ไข (Edit) ไว้ข้างๆ ชื่อทีม
-                tr.innerHTML = `
-                    <td class="px-4 py-2 text-center sticky-col-1 ${rank <= 3 ? 'bg-transparent' : 'bg-white'}">${rankHtml}</td>
-                    <td class="px-4 py-2 font-semibold text-gray-800 sticky-col-2 ${rank <= 3 ? 'bg-transparent' : 'bg-white'} truncate max-w-[150px] print:max-w-none group" title="${team.name}">
-                        <div class="flex items-center justify-between gap-2">
-                            <span class="truncate">${team.name}</span>
-                            <button onclick="openTeamModal('${team.name}')" class="text-gray-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 no-print" title="แก้ไขชื่อทีม">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                            </button>
-                        </div>
-                    </td>
-                    <td class="px-4 py-2 text-center text-base shadow-sm print:shadow-none print:bg-transparent print:text-black ${totalColorClass}">${team.total.toFixed(1)}</td>
-                    <td class="px-3 py-2 text-center text-gray-600 print:text-black border-l border-gray-100">${Number(team.c1).toFixed(1)}</td>
-                    <td class="px-3 py-2 text-center text-gray-600 print:text-black">${Number(team.c2).toFixed(1)}</td>
-                    <td class="px-3 py-2 text-center text-gray-600 print:text-black">${Number(team.c3).toFixed(1)}</td>
-                    <td class="px-3 py-2 text-center text-gray-600 print:text-black border-l border-gray-100">${Number(team.c4).toFixed(1)}</td>
-                    <td class="px-3 py-2 text-center text-gray-600 print:text-black">${Number(team.c5).toFixed(1)}</td>
-                    <td class="px-3 py-2 text-center text-gray-600 print:text-black border-l border-gray-100">${Number(team.c6).toFixed(1)}</td>
-                    <td class="px-3 py-2 text-center text-gray-600 print:text-black">${Number(team.c7).toFixed(1)}</td>
-                    <td class="px-3 py-2 text-center text-gray-600 print:text-black border-l border-gray-100">${Number(team.c8).toFixed(1)}</td>
-                    <td class="px-3 py-2 text-center text-purple-700 print:text-black bg-purple-50/30 print:bg-transparent border-l border-gray-200">${Number(team.c9).toFixed(1)}</td>
-                    <td class="px-3 py-2 text-center text-purple-700 print:text-black bg-purple-50/30 print:bg-transparent">${Number(team.c10).toFixed(1)}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        // อัปเดตกราฟ (พร้อมไอคอนเหรียญ)
-        function updateChart(data) {
-            const ctx = document.getElementById('scoreChart').getContext('2d');
-            
-            const labels = data.map((team, index) => `${index + 1}. ${team.name}`);
-            const scores = data.map(team => team.total);
-            
-            const backgroundColors = data.map((_, index) => {
-                if (index === 0) return 'rgba(250, 204, 21, 0.85)';
-                if (index === 1) return 'rgba(156, 163, 175, 0.85)';
-                if (index === 2) return 'rgba(249, 115, 22, 0.85)';
-                return 'rgba(59, 130, 246, 0.7)';
-            });
-
-            const borderColors = data.map((_, index) => {
-                if (index === 0) return 'rgb(202, 138, 4)'; 
-                if (index === 1) return 'rgb(107, 114, 128)'; 
-                if (index === 2) return 'rgb(194, 65, 12)'; 
-                return 'rgb(37, 99, 235)'; 
-            });
-
-            const customLabelsPlugin = {
-                id: 'customLabelsPlugin',
-                afterDatasetsDraw(chart) {
-                    const { ctx } = chart;
-                    chart.getDatasetMeta(0).data.forEach((bar, index) => {
-                        const rank = index + 1;
-                        const value = chart.data.datasets[0].data[index];
-                        ctx.save();
-                        ctx.textAlign = 'center';
-                        
-                        ctx.textBaseline = 'bottom';
-                        ctx.font = 'bold 14px "Prompt", sans-serif';
-                        ctx.fillStyle = '#1f2937';
-                        ctx.fillText(value.toFixed(1), bar.x, bar.y - 8);
-                        
-                        if (bar.height > 40) {
-                            ctx.textBaseline = 'top';
-                            let icon = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
-                            ctx.font = rank <= 3 ? '24px "Prompt", sans-serif' : 'bold 18px "Prompt", sans-serif';
-                            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-                            
-                            ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-                            ctx.shadowBlur = 4;
-                            ctx.shadowOffsetX = 0;
-                            ctx.shadowOffsetY = 2;
-                            
-                            ctx.fillText(icon, bar.x, bar.y + 12);
-                        }
-                        
-                        ctx.restore();
-                    });
-                }
+            const styles = {
+                1: "bg-yellow-300 text-red-900",
+                2: "bg-slate-200 text-slate-800",
+                3: "bg-orange-100 text-orange-800",
+                4: "bg-lime-100 text-lime-800",
+                5: "bg-red-50 text-red-700"
             };
 
-            if (!scoreChart) {
-                Chart.defaults.font.family = "'Prompt', sans-serif";
-                scoreChart = new Chart(ctx, {
-                    type: 'bar',
+            return `
+                <span class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-extrabold ${styles[rank]}">
+                    <i class="fa-solid fa-trophy"></i>
+                    อันดับ ${rank}
+                </span>
+            `;
+        }
+
+        function renderCharts(ranked) {
+            if (!window.Chart) return;
+
+            const chartColors = ["#c8102e", "#ffd100", "#b7d433", "#f97316", "#14b8a6", "#64748b", "#ef4444", "#84cc16"];
+            const chartConfigs = [
+                { id: "skillsChart", field: "part1Total", max: 800 },
+                { id: "recreationChart", field: "part2Total", max: 200 }
+            ];
+
+            chartConfigs.forEach((config) => {
+                const canvas = document.getElementById(config.id);
+                const data = [...ranked].sort((a, b) => b[config.field] - a[config.field] || a.name.localeCompare(b.name, "th")).slice(0, 8);
+                if (charts[config.id]) charts[config.id].destroy();
+
+                charts[config.id] = new Chart(canvas, {
+                    type: "bar",
                     data: {
-                        labels: labels,
+                        labels: data.map((team) => team.name),
                         datasets: [{
-                            label: 'คะแนนรวม', data: scores, backgroundColor: backgroundColors,
-                            borderColor: borderColors, borderWidth: 2, borderRadius: 6, barPercentage: 0.65
+                            data: data.map((team) => team[config.field]),
+                            borderRadius: 8,
+                            maxBarThickness: 44,
+                            backgroundColor: data.map((_, index) => chartColors[index % chartColors.length])
                         }]
                     },
-                    plugins: [customLabelsPlugin],
                     options: {
-                        layout: { padding: { top: 30 } },
-                        responsive: true, maintainAspectRatio: false,
-                        animation: { duration: 0 },
-                        plugins: { 
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
                             legend: { display: false },
                             tooltip: {
-                                backgroundColor: 'rgba(17, 24, 39, 0.9)',
-                                titleFont: { size: 14, family: "'Prompt', sans-serif" },
-                                bodyFont: { size: 16, weight: 'bold', family: "'Prompt', sans-serif" },
+                                backgroundColor: "#111827",
+                                titleFont: { family: "Sarabun", weight: "700" },
+                                bodyFont: { family: "Sarabun" },
                                 padding: 12
                             }
                         },
-                        scales: { 
-                            y: { beginAtZero: true, max: 900, grid: { color: '#e5e7eb', drawBorder: false } },
-                            x: { grid: { display: false }, ticks: { font: { weight: 'bold', size: 13 }, color: '#374151' } }
+                        scales: {
+                            x: {
+                                ticks: { color: "#475569", font: { family: "Sarabun", weight: "700" } },
+                                grid: { display: false }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                suggestedMax: config.max,
+                                ticks: { color: "#64748b", font: { family: "Sarabun" } },
+                                grid: { color: "#e2e8f0" }
+                            }
                         }
                     }
                 });
+            });
+        }
+
+        function renderScoreInputs() {
+            const buildInput = (station) => `
+                <label class="block rounded-lg border border-slate-200 bg-white p-3">
+                    <span class="mb-2 block text-sm font-bold text-slate-700">${station.name}</span>
+                    <input data-score-input id="score-${station.id}" type="number" inputmode="numeric" min="0" max="100" value="0" class="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm font-bold outline-none transition focus:border-red-500 focus:ring-4 focus:ring-red-100">
+                </label>
+            `;
+
+            dom.skillScoreInputs.innerHTML = STATIONS.filter((station) => station.part === 1).map(buildInput).join("");
+            dom.recreationScoreInputs.innerHTML = STATIONS.filter((station) => station.part === 2).map(buildInput).join("");
+        }
+
+        function openTeamModal(teamId = "") {
+            const team = teams.find((item) => item.id === teamId);
+            dom.modalTitle.textContent = team ? "แก้ไขข้อมูลทีม" : "เพิ่มทีมแข่งขัน";
+            dom.editingTeamId.value = team?.id || "";
+            dom.teamNameInput.value = team?.name || "";
+
+            STATIONS.forEach((station) => {
+                const input = document.getElementById(`score-${station.id}`);
+                input.value = team ? clampScore(team.scores[station.id] || 0) : 0;
+            });
+
+            updateLiveTotal();
+            document.body.classList.add("modal-active");
+            dom.teamModal.classList.remove("hidden");
+            dom.teamModal.classList.add("flex");
+            setTimeout(() => dom.teamNameInput.focus(), 50);
+        }
+
+        function closeTeamModal() {
+            document.body.classList.remove("modal-active");
+            dom.teamModal.classList.add("hidden");
+            dom.teamModal.classList.remove("flex");
+            dom.teamForm.reset();
+            dom.scoreWarning.classList.add("hidden");
+        }
+
+        function saveTeam(event) {
+            event.preventDefault();
+
+            const id = dom.editingTeamId.value || createTeamId();
+            const name = dom.teamNameInput.value.trim();
+            const scores = {};
+
+            if (!name) {
+                alert("กรุณากรอกชื่อทีม");
+                dom.teamNameInput.focus();
+                return;
+            }
+
+            STATIONS.forEach((station) => {
+                const input = document.getElementById(`score-${station.id}`);
+                const score = clampScore(input.value);
+                input.value = score;
+                scores[station.id] = score;
+            });
+
+            const existingIndex = teams.findIndex((team) => team.id === id);
+            const duplicateName = teams.some((team) => team.id !== id && team.name.trim().toLowerCase() === name.toLowerCase());
+            if (duplicateName && !confirm("มีชื่อทีมนี้อยู่แล้ว ต้องการบันทึกต่อหรือไม่?")) return;
+
+            if (existingIndex >= 0) {
+                teams[existingIndex] = { id, name, scores };
             } else {
-                scoreChart.data.labels = labels;
-                scoreChart.data.datasets[0].data = scores;
-                scoreChart.data.datasets[0].backgroundColor = backgroundColors;
-                scoreChart.data.datasets[0].borderColor = borderColors;
-                scoreChart.update();
+                teams.push({ id, name, scores });
+            }
+
+            persistTeams();
+            closeTeamModal();
+            renderDashboard();
+        }
+
+        function deleteTeam(teamId) {
+            const team = teams.find((item) => item.id === teamId);
+            if (!team) return;
+            if (!confirm(`ลบข้อมูล "${team.name}" ใช่หรือไม่?`)) return;
+
+            teams = teams.filter((item) => item.id !== teamId);
+            persistTeams();
+            renderDashboard();
+        }
+
+        function startNewCompetition() {
+            if (!confirm("เริ่มงานใหม่และลบข้อมูลทีมทั้งหมดจากหน้านี้ใช่หรือไม่? ควรสำรอง JSON ก่อนหากต้องการเก็บข้อมูลเดิม")) return;
+            teams = [];
+            persistTeams();
+            renderDashboard();
+        }
+
+        function exportJson() {
+            const payload = {
+                app: "EMS Rally 101 Scoreboard",
+                version: 2,
+                exportedAt: new Date().toISOString(),
+                stations: STATIONS,
+                teams
+            };
+            downloadFile(`ems-rally-101-${fileDate()}.json`, JSON.stringify(payload, null, 2), "application/json;charset=utf-8");
+        }
+
+        function exportCsv() {
+            const ranked = getRankedTeams();
+            const headers = ["อันดับปฏิบัติการ", "อันดับสันทนาการ", "รหัสทีม", "ชื่อทีม", ...STATIONS.map((station) => station.name), "คะแนนปฏิบัติการ", "ถ้วยปฏิบัติการ", "คะแนนสันทนาการ", "ถ้วยสันทนาการ"];
+            const rows = ranked.map((team) => [
+                team.skillRank,
+                team.recreationRank,
+                team.id,
+                team.name,
+                ...STATIONS.map((station) => team.scores[station.id] || 0),
+                team.part1Total,
+                team.skillRank <= 5 ? `อันดับ ${team.skillRank}` : "",
+                team.part2Total,
+                team.recreationRank <= 5 ? `อันดับ ${team.recreationRank}` : ""
+            ]);
+
+            const csv = [headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\n");
+            downloadFile(`ems-rally-101-${fileDate()}.csv`, "\uFEFF" + csv, "text/csv;charset=utf-8");
+        }
+
+        function downloadCsvTemplate() {
+            const headers = ["รหัสทีม", "ชื่อทีม", ...STATIONS.map((station) => station.name)];
+            const rows = [
+                ["T001", "ทีมตัวอย่าง 1", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                ["T002", "ทีมตัวอย่าง 2", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            ];
+            const csv = [headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\n");
+            downloadFile(`ems-rally-101-template.csv`, "\uFEFF" + csv, "text/csv;charset=utf-8");
+        }
+
+        function importScoreFile(file) {
+            if (!file) return;
+
+            const filename = file.name.toLowerCase();
+            const isExcelFile = filename.endsWith(".xlsx") || filename.endsWith(".xls");
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    const importedTeams = filename.endsWith(".json")
+                        ? importJsonTeams(String(reader.result || ""))
+                        : isExcelFile
+                            ? importWorkbookTeams(reader.result)
+                            : importCsvTeams(String(reader.result || ""));
+
+                    if (!importedTeams.length) {
+                        alert("ไม่พบข้อมูลทีมในไฟล์ที่นำเข้า");
+                        return;
+                    }
+                    if (!confirm(`นำเข้าข้อมูล ${importedTeams.length} ทีม และแทนที่ข้อมูลปัจจุบันใช่หรือไม่?`)) return;
+
+                    teams = ensureUniqueTeamIds(importedTeams);
+                    persistTeams();
+                    renderDashboard();
+                } catch (error) {
+                    alert(error.message || "ไฟล์นำเข้าไม่ถูกต้อง กรุณาตรวจสอบไฟล์อีกครั้ง");
+                } finally {
+                    dom.jsonFileInput.value = "";
+                }
+            };
+
+            if (isExcelFile) {
+                reader.readAsArrayBuffer(file);
+            } else {
+                reader.readAsText(file, "utf-8");
             }
         }
 
-        fetchScoreData();
-        setInterval(fetchScoreData, 5000);
+        function importJsonTeams(text) {
+            const parsed = JSON.parse(text);
+            return sanitizeImportedTeams(Array.isArray(parsed) ? parsed : parsed.teams);
+        }
+
+        function importWorkbookTeams(arrayBuffer) {
+            if (!window.XLSX) {
+                throw new Error("ไม่สามารถอ่านไฟล์ Excel ได้ กรุณาเชื่อมต่ออินเทอร์เน็ตหรือบันทึกไฟล์เป็น CSV แล้วนำเข้าอีกครั้ง");
+            }
+
+            const workbook = XLSX.read(arrayBuffer, { type: "array" });
+            const firstSheetName = workbook.SheetNames[0];
+            if (!firstSheetName) throw new Error("ไม่พบชีตข้อมูลในไฟล์ Excel");
+
+            const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], {
+                header: 1,
+                raw: false,
+                defval: ""
+            });
+            return importRowsAsTeams(rows);
+        }
+
+        function ensureUniqueTeamIds(inputTeams) {
+            const used = new Set();
+            return inputTeams.map((team, index) => {
+                const fallback = `T${String(index + 1).padStart(3, "0")}`;
+                let id = String(team.id || fallback).trim() || fallback;
+                if (used.has(id)) {
+                    let counter = index + 1;
+                    do {
+                        id = `T${String(counter).padStart(3, "0")}`;
+                        counter += 1;
+                    } while (used.has(id));
+                }
+                used.add(id);
+                return { ...team, id };
+            });
+        }
+
+        function importCsvTeams(text) {
+            const rows = parseCsv(text.replace(/^\uFEFF/, ""));
+            return importRowsAsTeams(rows);
+        }
+
+        function importRowsAsTeams(rows) {
+            const cleanRows = rows.filter((row) => Array.isArray(row) && row.some((cell) => String(cell || "").trim()));
+            if (cleanRows.length < 2) throw new Error("ไฟล์คะแนนต้องมีหัวตารางและข้อมูลอย่างน้อย 1 ทีม");
+
+            const headers = cleanRows[0].map(normalizeHeader);
+            const idIndex = findHeaderIndex(headers, ["รหัสทีม", "teamid", "team_id", "id", "code"]);
+            const nameIndex = findHeaderIndex(headers, ["ชื่อทีม", "teamname", "team_name", "team", "name", "ชื่อ"]);
+            if (nameIndex < 0) throw new Error("ไม่พบคอลัมน์ชื่อทีมในไฟล์คะแนน");
+
+            const stationIndexes = STATIONS.map((station) => {
+                const aliases = [
+                    station.id,
+                    station.name,
+                    station.name.replace(/\s+/g, ""),
+                    `คะแนน${station.name}`,
+                    `score${station.id}`
+                ];
+                return findHeaderIndex(headers, aliases);
+            });
+
+            if (stationIndexes.every((index) => index < 0)) {
+                throw new Error("ไม่พบคอลัมน์คะแนนฐานในไฟล์ กรุณาใช้ไฟล์ตัวอย่างหรือไฟล์ CSV ที่ส่งออกจากระบบ");
+            }
+
+            return cleanRows.slice(1)
+                .filter((row) => row.some((cell) => String(cell || "").trim()))
+                .map((row, index) => {
+                    const scores = {};
+                    STATIONS.forEach((station, stationIndex) => {
+                        const columnIndex = stationIndexes[stationIndex];
+                        scores[station.id] = columnIndex >= 0 ? clampScore(row[columnIndex]) : 0;
+                    });
+
+                    return {
+                        id: String(idIndex >= 0 && row[idIndex] ? row[idIndex] : `T${String(index + 1).padStart(3, "0")}`).trim(),
+                        name: String(row[nameIndex] || `ทีม ${index + 1}`).trim().slice(0, 80),
+                        scores
+                    };
+                })
+                .filter((team) => team.name);
+        }
+
+        function parseCsv(text) {
+            const delimiter = detectDelimiter(text);
+            const rows = [];
+            let row = [];
+            let cell = "";
+            let inQuotes = false;
+
+            for (let i = 0; i < text.length; i += 1) {
+                const char = text[i];
+                const next = text[i + 1];
+
+                if (char === '"') {
+                    if (inQuotes && next === '"') {
+                        cell += '"';
+                        i += 1;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === delimiter && !inQuotes) {
+                    row.push(cell.trim());
+                    cell = "";
+                } else if ((char === "\n" || char === "\r") && !inQuotes) {
+                    if (char === "\r" && next === "\n") i += 1;
+                    row.push(cell.trim());
+                    if (row.some((value) => value !== "")) rows.push(row);
+                    row = [];
+                    cell = "";
+                } else {
+                    cell += char;
+                }
+            }
+
+            row.push(cell.trim());
+            if (row.some((value) => value !== "")) rows.push(row);
+            return rows;
+        }
+
+        function detectDelimiter(text) {
+            const firstLine = String(text).split(/\r?\n/).find((line) => line.trim()) || "";
+            const candidates = [",", "\t", ";"];
+            return candidates
+                .map((delimiter) => ({ delimiter, count: countDelimiter(firstLine, delimiter) }))
+                .sort((a, b) => b.count - a.count)[0].delimiter;
+        }
+
+        function countDelimiter(line, delimiter) {
+            let count = 0;
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i += 1) {
+                const char = line[i];
+                const next = line[i + 1];
+                if (char === '"' && inQuotes && next === '"') {
+                    i += 1;
+                } else if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === delimiter && !inQuotes) {
+                    count += 1;
+                }
+            }
+            return count;
+        }
+
+        function normalizeHeader(value) {
+            return String(value || "")
+                .replace(/^\uFEFF/, "")
+                .trim()
+                .toLowerCase()
+                .replace(/[()\[\]{}\-_/\\:.]/g, "")
+                .replace(/\s+/g, "");
+        }
+
+        function findHeaderIndex(headers, aliases) {
+            const normalizedAliases = aliases.map(normalizeHeader);
+            return headers.findIndex((header) => normalizedAliases.includes(header));
+        }
+
+        function updateLiveTotal() {
+            let hasOutOfRange = false;
+            const totals = STATIONS.reduce((sum, station) => {
+                const input = document.getElementById(`score-${station.id}`);
+                const raw = Number(input.value);
+                if (!Number.isNaN(raw) && (raw < 0 || raw > 100)) hasOutOfRange = true;
+                if (station.part === 1) sum.skill += clampScore(input.value);
+                if (station.part === 2) sum.recreation += clampScore(input.value);
+                return sum;
+            }, { skill: 0, recreation: 0 });
+
+            dom.liveSkillScore.textContent = totals.skill.toLocaleString("th-TH");
+            dom.liveRecreationScore.textContent = totals.recreation.toLocaleString("th-TH");
+            dom.scoreWarning.classList.toggle("hidden", !hasOutOfRange);
+        }
+
+        function clampScore(value) {
+            const number = Number(value);
+            if (Number.isNaN(number)) return 0;
+            return Math.min(100, Math.max(0, Math.round(number)));
+        }
+
+        function createTeamId() {
+            const used = new Set(teams.map((team) => team.id));
+            let next = teams.length + 1;
+            let id = `T${String(next).padStart(3, "0")}`;
+            while (used.has(id)) {
+                next += 1;
+                id = `T${String(next).padStart(3, "0")}`;
+            }
+            return id;
+        }
+
+        function csvCell(value) {
+            return `"${String(value ?? "").replaceAll('"', '""')}"`;
+        }
+
+        function downloadFile(filename, content, type) {
+            const blob = new Blob([content], { type });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        function fileDate() {
+            const date = new Date();
+            const pad = (value) => String(value).padStart(2, "0");
+            return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}`;
+        }
+
+        function escapeHtml(value) {
+            return String(value)
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+        function renderDashboard() {
+            const ranked = getRankedTeams();
+            renderSummary(ranked);
+            renderLeaderboard(ranked);
+            renderCharts(ranked);
+            renderLastSaved();
+        }
+
+        function bindEvents() {
+            dom.addTeamBtn.addEventListener("click", () => openTeamModal());
+            dom.newCompetitionBtn.addEventListener("click", startNewCompetition);
+            dom.importJsonBtn.addEventListener("click", () => dom.jsonFileInput.click());
+            dom.templateCsvBtn.addEventListener("click", downloadCsvTemplate);
+            dom.jsonFileInput.addEventListener("change", (event) => importScoreFile(event.target.files[0]));
+            dom.exportJsonBtn.addEventListener("click", exportJson);
+            dom.exportCsvBtn.addEventListener("click", exportCsv);
+            dom.printBtn.addEventListener("click", () => window.print());
+            dom.closeModalBtn.addEventListener("click", closeTeamModal);
+            dom.cancelModalBtn.addEventListener("click", closeTeamModal);
+            dom.teamForm.addEventListener("submit", saveTeam);
+            dom.teamSearch.addEventListener("input", renderDashboard);
+            dom.rankFilter.addEventListener("change", renderDashboard);
+            dom.teamModal.addEventListener("click", (event) => {
+                if (event.target === dom.teamModal) closeTeamModal();
+            });
+            dom.leaderboardBody.addEventListener("click", (event) => {
+                const button = event.target.closest("button[data-action]");
+                if (!button) return;
+                if (button.dataset.action === "edit") openTeamModal(button.dataset.id);
+                if (button.dataset.action === "delete") deleteTeam(button.dataset.id);
+            });
+            document.addEventListener("input", (event) => {
+                if (event.target.matches("[data-score-input]")) updateLiveTotal();
+            });
+            document.addEventListener("keydown", (event) => {
+                if (event.key === "Escape" && !dom.teamModal.classList.contains("hidden")) closeTeamModal();
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            initDom();
+            renderScoreInputs();
+            bindEvents();
+            renderDashboard();
+        });
     </script>
 </body>
 </html>
