@@ -328,6 +328,7 @@
         const STORAGE_KEY = "emsRally101TeamsV2";
         const LEGACY_STORAGE_KEY = "emsRallyTeams";
         const LAST_SAVED_KEY = "emsRally101LastSaved";
+        const AUTOSAVE_DELAY_MS = 300;
 
         const STATIONS = [
             { id: "s1", name: "MCI", part: 1 },
@@ -352,6 +353,7 @@
 
         let teams = loadTeams();
         let charts = {};
+        let autoSaveTimer = null;
 
         const dom = {};
 
@@ -404,6 +406,45 @@
             localStorage.setItem(STORAGE_KEY, JSON.stringify(teams));
             localStorage.setItem(LAST_SAVED_KEY, new Date().toISOString());
             renderLastSaved();
+        }
+
+        function collectFormScores(normalizeInputs = false) {
+            const scores = {};
+            STATIONS.forEach((station) => {
+                const input = document.getElementById(`score-${station.id}`);
+                const score = clampScore(input.value);
+                if (normalizeInputs) input.value = score;
+                scores[station.id] = score;
+            });
+            return scores;
+        }
+
+        function scheduleActiveTeamAutosave() {
+            if (dom.teamModal.classList.contains("hidden")) return;
+            if (!dom.editingTeamId.value) return;
+
+            window.clearTimeout(autoSaveTimer);
+            autoSaveTimer = window.setTimeout(autoSaveActiveTeam, AUTOSAVE_DELAY_MS);
+        }
+
+        function flushActiveTeamAutosave() {
+            if (!autoSaveTimer) return;
+            window.clearTimeout(autoSaveTimer);
+            autoSaveActiveTeam();
+        }
+
+        function autoSaveActiveTeam() {
+            autoSaveTimer = null;
+            const id = dom.editingTeamId.value;
+            const existingIndex = teams.findIndex((team) => team.id === id);
+            if (existingIndex < 0) return;
+
+            teams[existingIndex] = {
+                ...teams[existingIndex],
+                scores: collectFormScores()
+            };
+            persistTeams();
+            renderDashboard();
         }
 
         function renderLastSaved() {
@@ -605,6 +646,7 @@
         }
 
         function closeTeamModal() {
+            flushActiveTeamAutosave();
             document.body.classList.remove("modal-active");
             dom.teamModal.classList.add("hidden");
             dom.teamModal.classList.remove("flex");
@@ -617,20 +659,13 @@
 
             const id = dom.editingTeamId.value || createTeamId();
             const name = dom.teamNameInput.value.trim();
-            const scores = {};
+            const scores = collectFormScores(true);
 
             if (!name) {
                 alert("กรุณากรอกชื่อทีม");
                 dom.teamNameInput.focus();
                 return;
             }
-
-            STATIONS.forEach((station) => {
-                const input = document.getElementById(`score-${station.id}`);
-                const score = clampScore(input.value);
-                input.value = score;
-                scores[station.id] = score;
-            });
 
             const existingIndex = teams.findIndex((team) => team.id === id);
             const duplicateName = teams.some((team) => team.id !== id && team.name.trim().toLowerCase() === name.toLowerCase());
@@ -999,11 +1034,15 @@
                 if (button.dataset.action === "delete") deleteTeam(button.dataset.id);
             });
             document.addEventListener("input", (event) => {
-                if (event.target.matches("[data-score-input]")) updateLiveTotal();
+                if (event.target.matches("[data-score-input]")) {
+                    updateLiveTotal();
+                    scheduleActiveTeamAutosave();
+                }
             });
             document.addEventListener("keydown", (event) => {
                 if (event.key === "Escape" && !dom.teamModal.classList.contains("hidden")) closeTeamModal();
             });
+            window.addEventListener("beforeunload", flushActiveTeamAutosave);
         }
 
         document.addEventListener("DOMContentLoaded", () => {
