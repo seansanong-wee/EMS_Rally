@@ -176,6 +176,18 @@
         body.modal-active { overflow: hidden; }
         .print-signatures { display: none; }
 
+        .save-toast {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(10px);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        .save-toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
         input[type="number"]::-webkit-outer-spin-button,
         input[type="number"]::-webkit-inner-spin-button {
             -webkit-appearance: none;
@@ -346,6 +358,7 @@
                         <span class="rounded-md bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700">LIVE SCORE</span>
                         <span class="rounded-md bg-lime-100 px-2.5 py-1 text-xs font-bold text-lime-800">รางวัลแยก 2 ประเภท</span>
                         <span id="lastSavedBadge" class="rounded-md bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">ยังไม่มีการบันทึก</span>
+                        <span id="autoSaveStatusBadge" class="rounded-md bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">บันทึกอัตโนมัติพร้อมใช้งาน</span>
                     </div>
                     <h2 class="max-w-3xl text-2xl font-extrabold leading-tight text-slate-950 md:text-4xl">ตารางสรุปผลการแข่งขัน EMS Rally 101</h2>
                     <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-600 md:text-base">บันทึกคะแนนทุกฐาน จัดอันดับปฏิบัติการและสันทนาการแยกกัน พร้อมแสดงถ้วยรางวัลอันดับ 1-5 ของแต่ละประเภท</p>
@@ -556,6 +569,10 @@
         </div>
     </div>
 
+    <div id="saveToast" class="save-toast fixed bottom-4 right-4 z-[60] max-w-[calc(100vw-2rem)] rounded-lg border border-lime-200 bg-white px-4 py-3 text-sm font-bold text-slate-800 shadow-lg shadow-slate-900/10">
+        บันทึกข้อมูลแล้ว
+    </div>
+
     <script>
         const STORAGE_KEY = "emsRally101TeamsV2";
         const LEGACY_STORAGE_KEY = "emsRallyTeams";
@@ -586,6 +603,8 @@
         let teams = loadTeams();
         let charts = {};
         let autoSaveTimer = null;
+        let autoSaveStatusTimer = null;
+        let saveToastTimer = null;
 
         const dom = {};
 
@@ -595,7 +614,7 @@
                 "teamModal", "teamForm", "closeModalBtn", "cancelModalBtn", "editingTeamId", "teamNameInput",
                 "skillScoreInputs", "recreationScoreInputs", "liveSkillScore", "liveRecreationScore", "scoreWarning", "modalTitle",
                 "teamSearch", "rankFilter", "leaderboardBody", "totalTeamsCount", "topSkillScore", "topRecreationScore", "firstSkillTeam", "firstRecreationTeam",
-                "avgSkill", "avgRecreation", "lastSavedBadge"
+                "avgSkill", "avgRecreation", "lastSavedBadge", "autoSaveStatusBadge", "saveToast"
             ].forEach((id) => { dom[id] = document.getElementById(id); });
         }
 
@@ -634,10 +653,41 @@
                 .filter((team) => team.name);
         }
 
-        function persistTeams() {
+        function persistTeams(message = "บันทึกข้อมูลแล้ว", notify = false) {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(teams));
             localStorage.setItem(LAST_SAVED_KEY, new Date().toISOString());
             renderLastSaved();
+            setAutoSaveStatus("saved");
+            if (notify) showSaveNotice(message);
+        }
+
+        function setAutoSaveStatus(status) {
+            if (!dom.autoSaveStatusBadge) return;
+            window.clearTimeout(autoSaveStatusTimer);
+
+            const states = {
+                idle: { text: "บันทึกอัตโนมัติพร้อมใช้งาน", className: "rounded-md bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600" },
+                saving: { text: "กำลังบันทึก...", className: "rounded-md bg-yellow-100 px-2.5 py-1 text-xs font-bold text-yellow-800" },
+                saved: { text: "บันทึกแล้ว", className: "rounded-md bg-lime-100 px-2.5 py-1 text-xs font-bold text-lime-800" }
+            };
+
+            const next = states[status] || states.idle;
+            dom.autoSaveStatusBadge.textContent = next.text;
+            dom.autoSaveStatusBadge.className = next.className;
+
+            if (status === "saved") {
+                autoSaveStatusTimer = window.setTimeout(() => setAutoSaveStatus("idle"), 2200);
+            }
+        }
+
+        function showSaveNotice(message) {
+            if (!dom.saveToast) return;
+            window.clearTimeout(saveToastTimer);
+            dom.saveToast.textContent = message;
+            dom.saveToast.classList.add("show");
+            saveToastTimer = window.setTimeout(() => {
+                dom.saveToast.classList.remove("show");
+            }, 2200);
         }
 
         function collectFormScores(normalizeInputs = false) {
@@ -655,6 +705,7 @@
             if (dom.teamModal.classList.contains("hidden")) return;
             if (!dom.editingTeamId.value) return;
 
+            setAutoSaveStatus("saving");
             window.clearTimeout(autoSaveTimer);
             autoSaveTimer = window.setTimeout(autoSaveActiveTeam, AUTOSAVE_DELAY_MS);
         }
@@ -673,9 +724,10 @@
 
             teams[existingIndex] = {
                 ...teams[existingIndex],
+                name: dom.teamNameInput.value.trim() || teams[existingIndex].name,
                 scores: collectFormScores()
             };
-            persistTeams();
+            persistTeams("บันทึกอัตโนมัติแล้ว", true);
             renderDashboard();
         }
 
@@ -909,7 +961,9 @@
                 teams.push({ id, name, scores });
             }
 
-            persistTeams();
+            window.clearTimeout(autoSaveTimer);
+            autoSaveTimer = null;
+            persistTeams(existingIndex >= 0 ? "บันทึกการแก้ไขแล้ว" : "เพิ่มทีมและบันทึกแล้ว", true);
             closeTeamModal();
             renderDashboard();
         }
@@ -920,14 +974,14 @@
             if (!confirm(`ลบข้อมูล "${team.name}" ใช่หรือไม่?`)) return;
 
             teams = teams.filter((item) => item.id !== teamId);
-            persistTeams();
+            persistTeams("ลบทีมและบันทึกแล้ว", true);
             renderDashboard();
         }
 
         function startNewCompetition() {
             if (!confirm("เริ่มงานใหม่และลบข้อมูลทีมทั้งหมดจากหน้านี้ใช่หรือไม่? ควรสำรอง JSON ก่อนหากต้องการเก็บข้อมูลเดิม")) return;
             teams = [];
-            persistTeams();
+            persistTeams("เริ่มงานใหม่และบันทึกแล้ว", true);
             renderDashboard();
         }
 
@@ -992,7 +1046,7 @@
                     if (!confirm(`นำเข้าข้อมูล ${importedTeams.length} ทีม และแทนที่ข้อมูลปัจจุบันใช่หรือไม่?`)) return;
 
                     teams = ensureUniqueTeamIds(importedTeams);
-                    persistTeams();
+                    persistTeams("นำเข้าไฟล์และบันทึกแล้ว", true);
                     renderDashboard();
                 } catch (error) {
                     alert(error.message || "ไฟล์นำเข้าไม่ถูกต้อง กรุณาตรวจสอบไฟล์อีกครั้ง");
@@ -1268,6 +1322,9 @@
             document.addEventListener("input", (event) => {
                 if (event.target.matches("[data-score-input]")) {
                     updateLiveTotal();
+                    scheduleActiveTeamAutosave();
+                }
+                if (event.target === dom.teamNameInput) {
                     scheduleActiveTeamAutosave();
                 }
             });
