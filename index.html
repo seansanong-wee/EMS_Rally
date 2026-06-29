@@ -174,6 +174,7 @@
 
         .modal { transition: opacity 0.2s ease, transform 0.2s ease; }
         body.modal-active { overflow: hidden; }
+        .print-signatures { display: none; }
 
         input[type="number"]::-webkit-outer-spin-button,
         input[type="number"]::-webkit-inner-spin-button {
@@ -184,14 +185,105 @@
         input[type="number"] { -moz-appearance: textfield; }
 
         @media print {
-            body { background: #ffffff; padding: 0; }
+            @page { size: A4 portrait; margin: 10mm; }
+            body {
+                background: #ffffff;
+                padding: 0;
+                font-size: 10px;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .brand-strip { height: 3px; }
             .no-print, header .toolbar, #teamModal { display: none !important; }
             header { position: static !important; border-bottom: 2px solid var(--niems-red); }
-            main { max-width: none !important; padding: 12px !important; }
-            .print-break { break-inside: avoid; }
+            header > div { gap: 6px !important; padding: 6px 0 8px !important; }
+            header .h-14.w-14 { height: 36px !important; width: 36px !important; }
+            header .text-2xl { font-size: 18px !important; line-height: 1.2 !important; }
+            header p { margin-top: 0 !important; font-size: 10px !important; line-height: 1.35 !important; }
+            main { max-width: none !important; padding: 6px 0 !important; width: 100% !important; }
+            .print-break { break-inside: avoid; page-break-inside: avoid; }
+            .score-table-section { break-inside: auto; page-break-inside: auto; }
             .shadow-sm, .shadow-lg, .hero-panel { box-shadow: none !important; }
-            table { font-size: 12px; }
+            .hero-panel { margin-bottom: 6px !important; }
+            .hero-panel > div { grid-template-columns: 1.15fr 0.85fr !important; }
+            .hero-panel .p-5,
+            .hero-panel .sm\:p-6 { padding: 8px !important; }
+            .hero-panel .mb-5 { margin-bottom: 6px !important; }
+            .hero-panel h2 { font-size: 16px !important; line-height: 1.25 !important; }
+            .hero-panel p { font-size: 10px !important; line-height: 1.35 !important; }
+            .hero-panel span { padding: 2px 5px !important; font-size: 9px !important; }
+            .hero-panel .text-3xl { font-size: 18px !important; line-height: 1.2 !important; }
+            main > section:nth-of-type(2) {
+                grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+                gap: 6px !important;
+                margin-bottom: 6px !important;
+            }
+            main > section:nth-of-type(2) > div { padding: 8px !important; }
+            main > section:nth-of-type(2) p { font-size: 9px !important; line-height: 1.25 !important; }
+            main > section:nth-of-type(2) .text-xl { font-size: 12px !important; line-height: 1.25 !important; }
+            main > section:nth-of-type(2) .h-11.w-11 { height: 28px !important; width: 28px !important; }
+            main > section:nth-of-type(2) i { font-size: 14px !important; }
+            .overflow-x-auto { overflow: visible !important; }
+            thead { display: table-header-group; }
+            th, td {
+                border-bottom: 1px solid #e2e8f0;
+                line-height: 1.2;
+                padding: 3px 4px !important;
+                vertical-align: middle;
+            }
+            table {
+                border-collapse: collapse;
+                font-size: 8.5px;
+                min-width: 0 !important;
+                table-layout: fixed;
+                width: 100% !important;
+            }
+            table th:nth-child(1),
+            table td:nth-child(1) { width: 11%; }
+            table th:nth-child(2),
+            table td:nth-child(2) { width: 31%; }
+            table th:nth-child(3),
+            table td:nth-child(3),
+            table th:nth-child(5),
+            table td:nth-child(5) { width: 12%; }
+            table th:nth-child(4),
+            table td:nth-child(4),
+            table th:nth-child(7),
+            table td:nth-child(7) { width: 14%; }
+            table th:nth-child(6),
+            table td:nth-child(6) { width: 6%; }
+            table .h-9 {
+                height: 20px !important;
+                width: 20px !important;
+            }
+            table span {
+                min-width: auto !important;
+                white-space: normal !important;
+            }
+            table p { margin: 0 !important; }
+            table .text-xs { font-size: 7.5px !important; }
+            table .rounded-lg,
+            table .rounded-md { border-radius: 4px !important; }
             .chart-section { display: none !important; }
+            .print-signatures {
+                break-inside: avoid;
+                color: #0f172a;
+                display: grid !important;
+                gap: 20mm;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                margin-top: 14mm;
+                page-break-inside: avoid;
+            }
+            .signature-box {
+                font-size: 11px;
+                text-align: center;
+            }
+            .signature-line {
+                border-bottom: 1px solid #334155;
+                height: 16mm;
+                margin: 0 6mm 2mm;
+            }
+            .signature-role { font-weight: 700; }
         }
     </style>
 </head>
@@ -349,7 +441,7 @@
             </div>
         </section>
 
-        <section class="print-break overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+        <section class="score-table-section print-break overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
             <div class="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 p-4 lg:flex-row lg:items-center lg:justify-between">
                 <h2 class="flex items-center gap-2 text-lg font-extrabold text-slate-950">
                     <i class="fa-solid fa-medal text-yellow-500"></i>
@@ -382,6 +474,19 @@
                     </thead>
                     <tbody id="leaderboardBody" class="divide-y divide-slate-100"></tbody>
                 </table>
+            </div>
+        </section>
+
+        <section class="print-signatures" aria-label="พื้นที่ลงนามกรรมการ">
+            <div class="signature-box">
+                <div class="signature-line"></div>
+                <p>(........................................................)</p>
+                <p class="signature-role">กรรมการ</p>
+            </div>
+            <div class="signature-box">
+                <div class="signature-line"></div>
+                <p>(........................................................)</p>
+                <p class="signature-role">กรรมการ</p>
             </div>
         </section>
     </main>
